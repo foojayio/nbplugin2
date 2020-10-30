@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+OpenIDE-Module-Layer: io/foojay/support/layer.xml
+OpenIDE-Module-Localizing-Bundle: io/foojay/support/Bundle.properties
+
