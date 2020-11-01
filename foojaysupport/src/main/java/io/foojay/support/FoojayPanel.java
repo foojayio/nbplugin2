@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.foojay.support;
-
 
 import io.foojay.api.discoclient.DiscoClient;
 import io.foojay.api.discoclient.bundle.Architecture;
@@ -40,32 +38,33 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-
+import org.netbeans.spi.java.platform.PlatformInstall;
+import org.openide.filesystems.FileUtil;
+import org.openide.util.Lookup;
 
 public class FoojayPanel extends javax.swing.JPanel {
-    private DiscoClient             discoClient;
-    private JComboBox<Integer>      versionComboBox;
-    private JComboBox<Distribution> distributionComboBox;
-    private JComboBox<BundleType>   bundleTypeComboBox;
-    private JCheckBox               latestCheckBox;
-    private BundleTableModel        tableModel;
-    private JTable                  table;
-    private JProgressBar            progressBar;
-    private JButton                 downloadButton;
 
+    private DiscoClient discoClient;
+    private JComboBox<Integer> versionComboBox;
+    private JComboBox<Distribution> distributionComboBox;
+    private JComboBox<BundleType> bundleTypeComboBox;
+    private JCheckBox latestCheckBox;
+    private BundleTableModel tableModel;
+    private JTable table;
+    private JProgressBar progressBar;
+    private JButton downloadButton;
 
     public FoojayPanel() {
 //        JFrame frame = new JFrame("Foojay Disco API");
 //        frame.setSize(280, 100);
 //        frame.setLocationRelativeTo(null);
 //        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    
+
         setName("Connect to OpenJDK Discovery Service");
 
         // Setup disco client
         discoClient = new DiscoClient();
         discoClient.setOnDCEvent(e -> handleDCEvent(this, e));
-
 
         // Get release infos
         Release lastLtsRelease = discoClient.getRelease(Release.LAST_LTS_RELEASE);
@@ -74,12 +73,13 @@ public class FoojayPanel extends javax.swing.JPanel {
         Release nextRelease = discoClient.getRelease(Release.NEXT_RELEASE);
         Integer nextFeatureRelease = Integer.valueOf(nextRelease.getVersionNumber());
 
-
         // Versions
         JLabel versionLabel = new JLabel("Versions");
         versionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         List<Integer> versionNumbers = new ArrayList<>();
-        for (Integer i = 6 ; i <= nextFeatureRelease ; i++) { versionNumbers.add(i); }
+        for (Integer i = 6; i <= nextFeatureRelease; i++) {
+            versionNumbers.add(i);
+        }
         versionComboBox = new JComboBox<>(versionNumbers.toArray(new Integer[0]));
         versionComboBox.setSelectedItem(lastLtsFeatureRelease);
         versionComboBox.addActionListener(e -> updateData());
@@ -89,11 +89,10 @@ public class FoojayPanel extends javax.swing.JPanel {
         versionsVBox.add(versionComboBox);
         versionsVBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
 
-
         // Distributions
         JLabel distributionLabel = new JLabel("Distributions");
         distributionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        Distribution[] distributions = { Distribution.NONE, Distribution.ADOPT, Distribution.CORRETTO, Distribution.DRAGONWELL, Distribution.LIBERICA, Distribution.OPEN_JDK, Distribution.SAP_MACHINE, Distribution.ZULU };
+        Distribution[] distributions = {Distribution.NONE, Distribution.ADOPT, Distribution.CORRETTO, Distribution.DRAGONWELL, Distribution.LIBERICA, Distribution.OPEN_JDK, Distribution.SAP_MACHINE, Distribution.ZULU};
         distributionComboBox = new JComboBox<>(distributions);
         distributionComboBox.setRenderer(new DistributionListCellRenderer());
         distributionComboBox.addActionListener(e -> updateData());
@@ -102,7 +101,6 @@ public class FoojayPanel extends javax.swing.JPanel {
         distributionVBox.add(distributionLabel);
         distributionVBox.add(distributionComboBox);
         distributionVBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
-
 
         // Bundle Types
         JLabel bundleTypeLabel = new JLabel("Bundle Type");
@@ -116,7 +114,6 @@ public class FoojayPanel extends javax.swing.JPanel {
         bundleTypeVBox.add(bundleTypeComboBox);
         bundleTypeVBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
 
-
         // Latest
         JLabel latestLabel = new JLabel("Latest");
         latestLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -127,7 +124,6 @@ public class FoojayPanel extends javax.swing.JPanel {
         latestVBox.add(latestLabel);
         latestVBox.add(latestCheckBox);
         latestVBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
-
 
         // Header Box
         Box hBox = Box.createHorizontalBox();
@@ -143,17 +139,15 @@ public class FoojayPanel extends javax.swing.JPanel {
         headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.PAGE_AXIS));
         headerPanel.add(hBox);
 
-
         // Table
         tableModel = new BundleTableModel(List.of());
-        table      = new JTable(tableModel);
+        table = new JTable(tableModel);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setAutoCreateRowSorter(true);
         ListSelectionModel selectionModel = table.getSelectionModel();
         selectionModel.addListSelectionListener(e -> downloadButton.setEnabled(table.getSelectedRow() >= 0));
         JScrollPane tableScrollPane = new JScrollPane(table);
         tableScrollPane.setPreferredSize(new Dimension(400, 300));
-
 
         // Footer Box
         progressBar = new JProgressBar(0, 100);
@@ -172,13 +166,11 @@ public class FoojayPanel extends javax.swing.JPanel {
         footerPanel.setLayout(new BoxLayout(footerPanel, BoxLayout.PAGE_AXIS));
         footerPanel.add(fBox);
 
-
         // Setup main layout
         setLayout(new BorderLayout());
         add(headerPanel, BorderLayout.NORTH);
         add(tableScrollPane, BorderLayout.CENTER);
-        add(footerPanel, BorderLayout.SOUTH);
-
+//        add(footerPanel, BorderLayout.SOUTH);
 
         // Show frame
 //        frame.pack();
@@ -186,18 +178,18 @@ public class FoojayPanel extends javax.swing.JPanel {
     }
 
     private void updateData() {
-        Distribution    distribution    = (Distribution) distributionComboBox.getSelectedItem();
-        Integer         featureVersion  = (Integer) versionComboBox.getSelectedItem();
-        boolean         latest          = latestCheckBox.isSelected();
+        Distribution distribution = (Distribution) distributionComboBox.getSelectedItem();
+        Integer featureVersion = (Integer) versionComboBox.getSelectedItem();
+        boolean latest = latestCheckBox.isSelected();
         OperatingSystem operatingSystem = getOperatingSystem();
-        Architecture    architecture    = Architecture.NONE;
-        Bitness         bitness         = Bitness.NONE;
-        Extension       extension       = Extension.NONE;
-        BundleType      bundleType      = (BundleType) bundleTypeComboBox.getSelectedItem();
-        Boolean         fx              = false;
-        ReleaseStatus   releaseStatus   = ReleaseStatus.NONE;
-        SupportTerm     supportTerm     = SupportTerm.NONE;
-        List<Bundle>    bundles         = discoClient.getBundles(distribution, new VersionNumber(featureVersion), latest, operatingSystem, architecture, bitness, extension, bundleType, fx, releaseStatus,  supportTerm);
+        Architecture architecture = Architecture.NONE;
+        Bitness bitness = Bitness.NONE;
+        Extension extension = Extension.NONE;
+        BundleType bundleType = (BundleType) bundleTypeComboBox.getSelectedItem();
+        Boolean fx = false;
+        ReleaseStatus releaseStatus = ReleaseStatus.NONE;
+        SupportTerm supportTerm = SupportTerm.NONE;
+        List<Bundle> bundles = discoClient.getBundles(distribution, new VersionNumber(featureVersion), latest, operatingSystem, architecture, bitness, extension, bundleType, fx, releaseStatus, supportTerm);
         SwingUtilities.invokeLater(() -> {
             BundleTableModel tableModel = (BundleTableModel) table.getModel();
             tableModel.setBundles(bundles);
@@ -206,8 +198,8 @@ public class FoojayPanel extends javax.swing.JPanel {
     }
 
     private void handleDCEvent(final Component parent, final DCEvent event) {
-        switch(event.getType()) {
-            case DOWNLOAD_STARTED :
+        switch (event.getType()) {
+            case DOWNLOAD_STARTED:
                 SwingUtilities.invokeLater(() -> downloadButton.setEnabled(false));
                 break;
             case DOWNLOAD_FINISHED:
@@ -225,6 +217,12 @@ public class FoojayPanel extends javax.swing.JPanel {
         }
     }
 
+    public BundleFileInfo getBundleInfo() {
+        Bundle bundle = tableModel.getBundles().get(table.getSelectedRow());
+        BundleFileInfo bundleFileInfo = discoClient.getBundleFileInfo(bundle.getId());
+        return bundleFileInfo;
+    }
+
     private void downloadBundle(final Component parent) {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setCurrentDirectory(new File("."));
@@ -239,9 +237,9 @@ public class FoojayPanel extends javax.swing.JPanel {
             return;
         }
 
-        Bundle         bundle         = tableModel.getBundles().get(table.getSelectedRow());
+        Bundle bundle = tableModel.getBundles().get(table.getSelectedRow());
         BundleFileInfo bundleFileInfo = discoClient.getBundleFileInfo(bundle.getId());
-        String         fileName       = destinationFolder+  File.separator + bundleFileInfo.getFileName();
+        String fileName = destinationFolder + File.separator + bundleFileInfo.getFileName();
 
         Future<?> future = discoClient.downloadBundle(bundle.getId(), fileName);
         try {
