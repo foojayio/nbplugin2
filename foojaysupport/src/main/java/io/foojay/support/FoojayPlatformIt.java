@@ -19,6 +19,7 @@ import org.openide.filesystems.FileUtil;
 public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIterator<WizardDescriptor> {
 
     public static final String PROP_FILENAME = "fileName"; //NOI18N
+    public static final String PROP_DOWNLOAD = "download"; //NOI18N
     public static final String PROP_FILEURL = "url"; //NOI18N
     
     private int index;
@@ -30,8 +31,11 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
     private List<WizardDescriptor.Panel<WizardDescriptor>> getPanels() {
         new Exception("here").printStackTrace(System.out);
         if (panels == null) {
+            WizardState state = new WizardState();
+            
             panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            panels.add(new SetupFoojayPlatform());
+            panels.add(new SetupFoojayPlatform(state));
+            panels.add(new DownloadPlatform(state));
             String[] steps = new String[panels.size()];
             for (int i = 0; i < panels.size(); i++) {
                 Component c = panels.get(i).getComponent();

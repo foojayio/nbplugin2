@@ -1,26 +1,24 @@
 package io.foojay.support;
 
-import io.foojay.api.discoclient.util.PkgInfo;
-import javax.swing.JOptionPane;
+import java.io.File;
 import javax.swing.event.ChangeListener;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
 
-public class SetupFoojayPlatform implements WizardDescriptor.AsynchronousValidatingPanel<WizardDescriptor> {
+public class DownloadPlatform implements WizardDescriptor.AsynchronousValidatingPanel<WizardDescriptor> {
 
-    private FoojayPanel component;
-    
+    private DownloadPanel component;
     private final WizardState state;
     
-    SetupFoojayPlatform(WizardState state) {
+    DownloadPlatform(WizardState state) {
         this.state = state;
     }
 
     @Override
-    public FoojayPanel getComponent() {
+    public DownloadPanel getComponent() {
         if (component == null) {
-            component = new FoojayPanel();
+            component = new DownloadPanel(state.pkgInfo);
         }
         return component;
     }
@@ -32,7 +30,7 @@ public class SetupFoojayPlatform implements WizardDescriptor.AsynchronousValidat
 
     @Override
     public boolean isValid() {
-        return getComponent().getBundleInfo() != null;
+        return getComponent().isDownloadFinished();
     }
 
     @Override
@@ -49,10 +47,8 @@ public class SetupFoojayPlatform implements WizardDescriptor.AsynchronousValidat
 
     @Override
     public void storeSettings(WizardDescriptor wiz) {
-        PkgInfo bi = getComponent().getBundleInfo();
-        wiz.putProperty(FoojayPlatformIt.PROP_FILENAME, bi.getFileName());
-        wiz.putProperty(FoojayPlatformIt.PROP_FILEURL, bi.getDirectDownloadUri());
-        state.pkgInfo = bi;
+        File file = getComponent().getDownload();
+        wiz.putProperty(FoojayPlatformIt.PROP_DOWNLOAD, file.getAbsolutePath());
     }
 
     @Override
@@ -62,5 +58,6 @@ public class SetupFoojayPlatform implements WizardDescriptor.AsynchronousValidat
     @Override
     public void validate() throws WizardValidationException {
     }
+
 
 }

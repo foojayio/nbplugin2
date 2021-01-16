@@ -221,7 +221,12 @@ public class FoojayPanel extends javax.swing.JPanel {
     }
 
     public PkgInfo getBundleInfo() {
-        Pkg bundle = tableModel.getBundles().get(table.getSelectedRow());
+        int index = table.getSelectedRow();
+        if (index < 0)
+            return null;
+        Pkg bundle = tableModel.getBundles().get(index);
+        if (bundle == null)
+            return null;
         PkgInfo bundleFileInfo = discoClient.getPkgInfo(bundle.getId(), bundle.getJavaVersion());
         return bundleFileInfo;
     }
