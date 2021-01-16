@@ -9,6 +9,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
+import org.netbeans.api.java.platform.JavaPlatform;
 import org.openide.WizardDescriptor;
 import org.openide.awt.StatusDisplayer;
 
@@ -24,6 +25,7 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
     private String[] names;
 
     private List<WizardDescriptor.Panel<WizardDescriptor>> getPanels() {
+        new Exception("here").printStackTrace(System.out);
         if (panels == null) {
             panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
             panels.add(new SetupFoojayPlatform());
@@ -97,10 +99,11 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
     }
 
     @Override
-    public Set instantiate() throws IOException {
+    public Set<JavaPlatform> instantiate() throws IOException {
         String fileName = (String) wizard.getProperty(FoojayPlatformIt.PROP_FILENAME); 
         String fileURL = (String) wizard.getProperty(FoojayPlatformIt.PROP_FILEURL);
         StatusDisplayer.getDefault().setStatusText(fileName + " / " + fileURL);
+        //TODO: create the java platform
         return Collections.EMPTY_SET;
     }
     

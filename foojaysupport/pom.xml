@@ -37,8 +37,8 @@
     <dependencies>
         <dependency>
             <groupId>io.foojay.api</groupId>
-            <artifactId>io-foojay-api</artifactId>
-            <version>RELEASE110</version>
+            <artifactId>discoclient</artifactId>
+            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>

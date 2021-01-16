@@ -1,6 +1,6 @@
 package io.foojay.support;
 
-import io.foojay.api.discoclient.util.BundleFileInfo;
+import io.foojay.api.discoclient.util.PkgInfo;
 import javax.swing.JOptionPane;
 import javax.swing.event.ChangeListener;
 import org.openide.WizardDescriptor;
@@ -43,9 +43,9 @@ public class SetupFoojayPlatform implements WizardDescriptor.AsynchronousValidat
 
     @Override
     public void storeSettings(WizardDescriptor wiz) {
-        BundleFileInfo bi = getComponent().getBundleInfo();
+        PkgInfo bi = getComponent().getBundleInfo();
         wiz.putProperty(FoojayPlatformIt.PROP_FILENAME, bi.getFileName());
-        wiz.putProperty(FoojayPlatformIt.PROP_FILEURL, bi.getFileDownloadUrl());
+        wiz.putProperty(FoojayPlatformIt.PROP_FILEURL, bi.getDirectDownloadUri());
     }
 
     @Override
