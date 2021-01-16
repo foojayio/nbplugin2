@@ -2,50 +2,55 @@ package io.foojay.support;
 
 import io.foojay.api.discoclient.DiscoClient;
 import io.foojay.api.discoclient.event.DCEvent;
-import io.foojay.api.discoclient.pkg.Pkg;
 import io.foojay.api.discoclient.util.PkgInfo;
 import java.awt.Component;
 import java.io.File;
-import java.util.concurrent.ExecutionException;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.concurrent.Future;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.compress.utils.IOUtils;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
+import org.openide.util.RequestProcessor;
 
 public class DownloadPanel extends javax.swing.JPanel {
+
+    public final static String PROP_DOWNLOAD_FINISHED = "downloadFinished";
 
     private boolean downloadFinished;
     private File download;
     private final DiscoClient discoClient;
-    private final PkgInfo pkgInfo;
+    private final WizardState state;
 
-    public DownloadPanel(PkgInfo pkgInfo) {
+    public DownloadPanel(WizardState state) {
         setName("Download");
-        
-        this.pkgInfo = pkgInfo;
-        
+
+        this.state = state;
+
         initComponents();
 
         discoClient = new DiscoClient();
         discoClient.setOnDCEvent(e -> handleDCEvent(this, e));
-        downloadButton.addActionListener(e -> downloadBundle(this));
     }
 
-    private void downloadBundle(final Component parent) {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(new File("."));
-        fileChooser.setDialogTitle("Select destination folder");
-        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        fileChooser.setAcceptAllFileFilterUsed(false);
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        jdkDescription.setText(state.pkgInfo.getFileName());
+    }
 
-        String destinationFolder;
-        if (fileChooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
-            destinationFolder = fileChooser.getSelectedFile().getAbsolutePath();
-        } else {
-            return;
-        }
-
+    private void downloadBundle(String destinationFolder) {
+        PkgInfo pkgInfo = state.pkgInfo;
         String fileName = destinationFolder + File.separator + pkgInfo.getFileName();
+        download = new File(fileName);
 
         Future<?> future = discoClient.downloadPkg(pkgInfo, fileName);
 //        try {
@@ -58,14 +63,41 @@ public class DownloadPanel extends javax.swing.JPanel {
     private void handleDCEvent(final Component parent, final DCEvent event) {
         switch (event.getType()) {
             case DOWNLOAD_STARTED:
-                SwingUtilities.invokeLater(() -> downloadButton.setEnabled(false));
+                SwingUtilities.invokeLater(() -> {
+                    statusLabel.setText("Downloading...");
+                    downloadButton.setEnabled(false);
+                });
                 break;
             case DOWNLOAD_FINISHED:
                 downloadFinished = true;
-                SwingUtilities.invokeLater(() -> {
-                    //progressBar.setValue(0);
-                    //downloadButton.setEnabled(true);
-                });
+                final FileObject downloadFO = FileUtil.toFileObject(download);
+                //TODO: check only for zip
+                if (FileUtil.isArchiveFile(downloadFO)) {
+                    SwingUtilities.invokeLater(() -> statusLabel.setText("Unarchiving..."));
+                    RequestProcessor.getDefault().post(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                File outputFile = new File(download.getParent(), downloadFO.getName() /* no ext */);
+                                uncompress(download, outputFile);
+                                SwingUtilities.invokeLater(() -> statusLabel.setText("Unarchived."));
+                                //find bin folder and return the parent of that as the download path
+                                FileObject binParent = findBin(FileUtil.toFileObject(outputFile));
+
+                                //TODO: This is hack to set permissions until I see why Apache Compress does not read them.
+                                for (FileObject exe : binParent.getFileObject("bin").getChildren()) {
+                                    FileUtil.toFile(exe).setExecutable(true);
+                                }
+                                download = FileUtil.toFile(binParent);
+                            } catch (IOException ex) {
+                                //TODO: What now? Reveal file?
+                            }
+                            SwingUtilities.invokeLater(() -> firePropertyChange(PROP_DOWNLOAD_FINISHED, false, true));
+                        }
+                    });
+                } else {
+                    SwingUtilities.invokeLater(() -> firePropertyChange(PROP_DOWNLOAD_FINISHED, false, true));
+                }
                 break;
             case DOWNLOAD_PROGRESS:
                 SwingUtilities.invokeLater(() -> progressBar.setValue((int) ((double) event.getFraction() / (double) event.getFileSize() * 100)));
@@ -80,10 +112,11 @@ public class DownloadPanel extends javax.swing.JPanel {
         return downloadFinished;
     }
 
+    //@Nullable
     public File getDownload() {
         return download;
     }
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -97,15 +130,34 @@ public class DownloadPanel extends javax.swing.JPanel {
         jdkDescription = new javax.swing.JLabel();
         downloadButton = new javax.swing.JButton();
         progressBar = new javax.swing.JProgressBar();
+        jLabel2 = new javax.swing.JLabel();
+        downloadPathText = new javax.swing.JTextField();
+        chooseButton = new javax.swing.JToggleButton();
+        statusLabel = new javax.swing.JLabel();
 
         org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.jLabel1.text")); // NOI18N
 
         org.openide.awt.Mnemonics.setLocalizedText(jdkDescription, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.jdkDescription.text")); // NOI18N
 
         org.openide.awt.Mnemonics.setLocalizedText(downloadButton, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.downloadButton.text")); // NOI18N
+        downloadButton.setEnabled(false);
 
-        progressBar.setValue(30);
         progressBar.setStringPainted(true);
+
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.jLabel2.text")); // NOI18N
+
+        downloadPathText.setEditable(false);
+        downloadPathText.setText(org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.downloadPathText.text")); // NOI18N
+
+        org.openide.awt.Mnemonics.setLocalizedText(chooseButton, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.chooseButton.text")); // NOI18N
+        chooseButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                chooseButtonActionPerformed(evt);
+            }
+        });
+
+        statusLabel.setFont(statusLabel.getFont().deriveFont((statusLabel.getFont().getStyle() | java.awt.Font.ITALIC)));
+        org.openide.awt.Mnemonics.setLocalizedText(statusLabel, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.statusLabel.text")); // NOI18N
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -114,36 +166,135 @@ public class DownloadPanel extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(jLabel2)
+                        .addGap(12, 12, 12)
+                        .addComponent(downloadPathText, javax.swing.GroupLayout.DEFAULT_SIZE, 409, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(chooseButton))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel1)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jdkDescription, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, 419, Short.MAX_VALUE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(downloadButton)))
-                .addContainerGap())
+                        .addComponent(jdkDescription, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addContainerGap())
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(statusLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(downloadButton))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel1)
                     .addComponent(jdkDescription))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel2)
+                    .addComponent(downloadPathText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(chooseButton))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(downloadButton)
-                    .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
+                    .addComponent(statusLabel))
+                .addGap(5, 5, 5)
+                .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
+    private void chooseButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chooseButtonActionPerformed
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setCurrentDirectory(new File("."));
+        fileChooser.setDialogTitle("Select destination folder");
+        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        fileChooser.setAcceptAllFileFilterUsed(false);
+
+        String destinationFolder;
+        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            destinationFolder = fileChooser.getSelectedFile().getAbsolutePath();
+            downloadPathText.setText(destinationFolder);
+            downloadButton.setEnabled(true);
+
+            downloadBundle(destinationFolder);
+        } else {
+            return;
+        }
+    }//GEN-LAST:event_chooseButtonActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JToggleButton chooseButton;
     private javax.swing.JButton downloadButton;
+    private javax.swing.JTextField downloadPathText;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jdkDescription;
     private javax.swing.JProgressBar progressBar;
+    private javax.swing.JLabel statusLabel;
     // End of variables declaration//GEN-END:variables
+
+    public void uncompress(File zip, File targetDir) throws FileNotFoundException, IOException {
+        try ( ZipArchiveInputStream i = new ZipArchiveInputStream(new FileInputStream(zip))) {
+            ZipArchiveEntry entry = null;
+            while ((entry = i.getNextZipEntry()) != null) {
+                if (!i.canReadEntryData(entry)) {
+                    // log something?
+                    continue;
+                }
+                File f = new File(targetDir, entry.getName()).getAbsoluteFile();
+                if (!isAncestor(targetDir, f)) //bad entry?
+                {
+                    continue;
+                }
+                if (entry.isDirectory()) {
+                    if (!f.isDirectory() && !f.mkdirs()) {
+                        throw new IOException("Could not create dirs" + f);
+                    }
+                } else {
+                    File parent = f.getParentFile();
+                    if (!parent.isDirectory() && !parent.mkdirs()) {
+                        throw new IOException("Could not create dirs" + parent);
+                    }
+                    try ( OutputStream o = Files.newOutputStream(f.toPath())) {
+                        IOUtils.copy(i, o);
+                    }
+                    if (entry.getUnixMode() != 0) {
+                        System.out.println("Entry " + entry.getName() + " has mode " + entry.getUnixMode());
+                        if ((entry.getUnixMode() & 1) != 0) {
+                            f.setExecutable(true);
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
+    private FileObject findBin(FileObject outputDir) {
+        for (FileObject f : outputDir.getChildren()) {
+            if (f.isFolder() && f.getName().equals("bin")) {
+                return outputDir;
+            }
+        }
+        for (FileObject f : outputDir.getChildren()) {
+            if (f.isFolder()) {
+                FileObject sub = findBin(f);
+                if (sub != null) {
+                    return sub;
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean isAncestor(File targetDir, File child) {
+        for (; child.getParentFile() != null; child = child.getParentFile()) {
+            if (child.getParentFile().equals(targetDir)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

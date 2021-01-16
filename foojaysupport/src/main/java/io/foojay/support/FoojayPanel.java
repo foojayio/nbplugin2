@@ -46,6 +46,7 @@ import org.openide.filesystems.FileUtil;
 import org.openide.util.Lookup;
 
 public class FoojayPanel extends javax.swing.JPanel {
+    public static final String PROP_DOWNLOAD_SELECTION = "downloadSelection";
 
     private DiscoClient discoClient;
     private JComboBox<Integer> versionComboBox;
@@ -148,7 +149,11 @@ public class FoojayPanel extends javax.swing.JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setAutoCreateRowSorter(true);
         ListSelectionModel selectionModel = table.getSelectionModel();
-        selectionModel.addListSelectionListener(e -> downloadButton.setEnabled(table.getSelectedRow() >= 0));
+        selectionModel.addListSelectionListener(e -> {
+            boolean selectedSomething = table.getSelectedRow() >= 0;
+            downloadButton.setEnabled(selectedSomething);
+            firePropertyChange(PROP_DOWNLOAD_SELECTION, false, true);
+        });
         JScrollPane tableScrollPane = new JScrollPane(table);
         tableScrollPane.setPreferredSize(new Dimension(400, 300));
 
@@ -227,7 +232,7 @@ public class FoojayPanel extends javax.swing.JPanel {
         Pkg bundle = tableModel.getBundles().get(index);
         if (bundle == null)
             return null;
-        PkgInfo bundleFileInfo = discoClient.getPkgInfo(bundle.getId(), bundle.getJavaVersion());
+        PkgInfo bundleFileInfo = discoClient.getPkgInfo(bundle.getEphemeralId(), bundle.getJavaVersion());
         return bundleFileInfo;
     }
 
@@ -246,7 +251,7 @@ public class FoojayPanel extends javax.swing.JPanel {
         }
 
         Pkg bundle = tableModel.getBundles().get(table.getSelectedRow());
-        PkgInfo bundleFileInfo = discoClient.getPkgInfo(bundle.getId(), bundle.getJavaVersion());
+        PkgInfo bundleFileInfo = discoClient.getPkgInfo(bundle.getEphemeralId(), bundle.getJavaVersion());
         String fileName = destinationFolder + File.separator + bundleFileInfo.getFileName();
 
         Future<?> future = discoClient.downloadPkg(bundleFileInfo, fileName);

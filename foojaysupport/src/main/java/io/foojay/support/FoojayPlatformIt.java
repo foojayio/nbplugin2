@@ -29,7 +29,6 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
     private String[] names;
 
     private List<WizardDescriptor.Panel<WizardDescriptor>> getPanels() {
-        new Exception("here").printStackTrace(System.out);
         if (panels == null) {
             WizardState state = new WizardState();
             
@@ -111,7 +110,12 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
         String fileURL = (String) wizard.getProperty(FoojayPlatformIt.PROP_FILEURL);
         StatusDisplayer.getDefault().setStatusText(fileName + " / " + fileURL);
         //TODO: Download (in background?)
-        return Collections.singleton(J2SEPlatformCreator.createJ2SEPlatform(FileUtil.toFileObject(new File(fileName))));
+        String downloadedFolder = (String) wizard.getProperty(FoojayPlatformIt.PROP_DOWNLOAD);
+        if (downloadedFolder != null)
+            return Collections.singleton(J2SEPlatformCreator.createJ2SEPlatform(FileUtil.toFileObject(new File(downloadedFolder))));
+        else
+            //TODO: notifcation?
+            return Collections.EMPTY_SET;
     }
     
     @Override
