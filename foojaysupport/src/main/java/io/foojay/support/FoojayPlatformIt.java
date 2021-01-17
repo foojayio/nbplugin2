@@ -1,6 +1,7 @@
 package io.foojay.support;
 
 import java.awt.Component;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,12 +10,16 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
+import org.netbeans.api.java.platform.JavaPlatform;
+import org.netbeans.modules.java.j2seplatform.api.J2SEPlatformCreator;
 import org.openide.WizardDescriptor;
 import org.openide.awt.StatusDisplayer;
+import org.openide.filesystems.FileUtil;
 
 public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIterator<WizardDescriptor> {
 
     public static final String PROP_FILENAME = "fileName"; //NOI18N
+    public static final String PROP_DOWNLOAD = "download"; //NOI18N
     public static final String PROP_FILEURL = "url"; //NOI18N
     
     private int index;
@@ -25,8 +30,11 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
 
     private List<WizardDescriptor.Panel<WizardDescriptor>> getPanels() {
         if (panels == null) {
+            WizardState state = new WizardState();
+            
             panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            panels.add(new SetupFoojayPlatform());
+            panels.add(new SetupFoojayPlatform(state));
+            panels.add(new DownloadPlatform(state));
             String[] steps = new String[panels.size()];
             for (int i = 0; i < panels.size(); i++) {
                 Component c = panels.get(i).getComponent();
@@ -97,11 +105,17 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
     }
 
     @Override
-    public Set instantiate() throws IOException {
+    public Set<JavaPlatform> instantiate() throws IOException {
         String fileName = (String) wizard.getProperty(FoojayPlatformIt.PROP_FILENAME); 
         String fileURL = (String) wizard.getProperty(FoojayPlatformIt.PROP_FILEURL);
         StatusDisplayer.getDefault().setStatusText(fileName + " / " + fileURL);
-        return Collections.EMPTY_SET;
+        //TODO: Download (in background?)
+        String downloadedFolder = (String) wizard.getProperty(FoojayPlatformIt.PROP_DOWNLOAD);
+        if (downloadedFolder != null)
+            return Collections.singleton(J2SEPlatformCreator.createJ2SEPlatform(FileUtil.toFileObject(new File(downloadedFolder))));
+        else
+            //TODO: notifcation?
+            return Collections.EMPTY_SET;
     }
     
     @Override

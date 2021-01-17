@@ -16,32 +16,29 @@
 
 package io.foojay.support;
 
-import io.foojay.api.discoclient.bundle.Architecture;
-import io.foojay.api.discoclient.bundle.Bitness;
-import io.foojay.api.discoclient.bundle.Bundle;
-import io.foojay.api.discoclient.bundle.BundleType;
-import io.foojay.api.discoclient.bundle.Distribution;
-import io.foojay.api.discoclient.bundle.Extension;
-import io.foojay.api.discoclient.bundle.ReleaseStatus;
-import io.foojay.api.discoclient.bundle.SupportTerm;
-import io.foojay.api.discoclient.bundle.VersionNumber;
+import io.foojay.api.discoclient.pkg.ArchiveType;
+import io.foojay.api.discoclient.pkg.Distribution;
+import io.foojay.api.discoclient.pkg.Pkg;
+import io.foojay.api.discoclient.pkg.PackageType;
+import io.foojay.api.discoclient.pkg.ReleaseStatus;
+import io.foojay.api.discoclient.pkg.VersionNumber;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.List;
 
 
 public class BundleTableModel extends AbstractTableModel {
-    private String[]     columnNames = { "Version", "Distribution", "Vendor", "Bundle Type", "Support Term", "Release Status", "Extension", "Filename" };
-    private List<Bundle> bundles;
+    private String[]     columnNames = { "Version", "Distribution", "Vendor", "Bundle Type", "Release Status", "Extension" };
+    private List<Pkg> bundles;
 
 
-    public BundleTableModel(final List<Bundle> bundles) {
+    public BundleTableModel(final List<Pkg> bundles) {
         this.bundles = bundles;
     }
 
 
-    public List<Bundle> getBundles() { return bundles; }
-    public void setBundles(final List<Bundle> bundles) {
+    public List<Pkg> getBundles() { return bundles; }
+    public void setBundles(final List<Pkg> bundles) {
         this.bundles = bundles;
     }
 
@@ -52,10 +49,7 @@ public class BundleTableModel extends AbstractTableModel {
             case 2 :
             case 3 :
             case 4 :
-            case 5 :
-            case 6 :
-            case 7 :
-            case 8 : return columnNames[col];
+            case 5 : return columnNames[col];
             default: return null;
         }
     }
@@ -65,11 +59,9 @@ public class BundleTableModel extends AbstractTableModel {
             case 0 : return VersionNumber.class;
             case 1 : return Distribution.class;
             case 2 : return String.class;
-            case 3 : return BundleType.class;
-            case 4 : return SupportTerm.class;
-            case 5 : return ReleaseStatus.class;
-            case 6 : return Extension.class;
-            case 7 : return String.class;
+            case 3 : return PackageType.class;
+            case 4 : return ReleaseStatus.class;
+            case 5 : return ArchiveType.class;
             default: return null;
         }
     }
@@ -84,16 +76,16 @@ public class BundleTableModel extends AbstractTableModel {
     }
 
     @Override public Object getValueAt(final int row, final int col) {
-        final Bundle bundle = bundles.get(row);
+        if (row < 0 || row > bundles.size()) { return null; }
+        final Pkg bundle = bundles.get(row);
         switch(col) {
-            case 0 : return bundle.getVersionNumber();
+            case 0 : return bundle.getDistributionVersion();
             case 1 : return bundle.getDistribution().getUiString();
-            case 2 : return bundle.getDistribution().getVendor();
-            case 3 : return bundle.getBundleType().getUiString();
-            case 4 : return bundle.getSupportTerm().name();
-            case 5 : return bundle.getReleaseStatus().name();
-            case 6 : return bundle.getExtension().getUiString();
-            case 7 : return bundle.getFileName();
+            //TODO: EMI: Remove Vendor column
+            case 2 : return bundle.getDistribution().getUiString();
+            case 3 : return bundle.getPackageType().getUiString();
+            case 4 : return bundle.getReleaseStatus().name();
+            case 5 : return bundle.getArchiveType().getUiString();
             default: return null;
         }
     }

@@ -16,19 +16,22 @@
 package io.foojay.support;
 
 import io.foojay.api.discoclient.DiscoClient;
-import io.foojay.api.discoclient.bundle.Architecture;
-import io.foojay.api.discoclient.bundle.Bitness;
-import io.foojay.api.discoclient.bundle.Bundle;
-import io.foojay.api.discoclient.bundle.BundleType;
-import io.foojay.api.discoclient.bundle.Distribution;
-import io.foojay.api.discoclient.bundle.Extension;
-import io.foojay.api.discoclient.bundle.OperatingSystem;
-import io.foojay.api.discoclient.bundle.Release;
-import io.foojay.api.discoclient.bundle.ReleaseStatus;
-import io.foojay.api.discoclient.bundle.SupportTerm;
-import io.foojay.api.discoclient.bundle.VersionNumber;
+import io.foojay.api.discoclient.pkg.Architecture;
+import io.foojay.api.discoclient.pkg.Bitness;
+import io.foojay.api.discoclient.pkg.Pkg;
+import io.foojay.api.discoclient.pkg.PackageType;
+import io.foojay.api.discoclient.pkg.Distribution;
+import io.foojay.api.discoclient.pkg.OperatingSystem;
+//import io.foojay.api.discoclient.pkg.Release;
+import io.foojay.api.discoclient.pkg.ReleaseStatus;
+import io.foojay.api.discoclient.pkg.VersionNumber;
 import io.foojay.api.discoclient.event.DCEvent;
-import io.foojay.api.discoclient.util.BundleFileInfo;
+import io.foojay.api.discoclient.pkg.ArchiveType;
+import io.foojay.api.discoclient.pkg.Latest;
+import io.foojay.api.discoclient.pkg.MajorVersion;
+import io.foojay.api.discoclient.pkg.Scope;
+import io.foojay.api.discoclient.pkg.TermOfSupport;
+import io.foojay.api.discoclient.util.PkgInfo;
 
 import javax.swing.*;
 import java.awt.*;
@@ -43,11 +46,12 @@ import org.openide.filesystems.FileUtil;
 import org.openide.util.Lookup;
 
 public class FoojayPanel extends javax.swing.JPanel {
+    public static final String PROP_DOWNLOAD_SELECTION = "downloadSelection";
 
     private DiscoClient discoClient;
     private JComboBox<Integer> versionComboBox;
     private JComboBox<Distribution> distributionComboBox;
-    private JComboBox<BundleType> bundleTypeComboBox;
+    private JComboBox<PackageType> bundleTypeComboBox;
     private JCheckBox latestCheckBox;
     private BundleTableModel tableModel;
     private JTable table;
@@ -67,11 +71,11 @@ public class FoojayPanel extends javax.swing.JPanel {
         discoClient.setOnDCEvent(e -> handleDCEvent(this, e));
 
         // Get release infos
-        Release lastLtsRelease = discoClient.getRelease(Release.LAST_LTS_RELEASE);
-        Integer lastLtsFeatureRelease = Integer.valueOf(lastLtsRelease.getVersionNumber());
+        MajorVersion lastLtsRelease = discoClient.getLatestLts(false);
+        Integer lastLtsFeatureRelease = lastLtsRelease.getAsInt();
 
-        Release nextRelease = discoClient.getRelease(Release.NEXT_RELEASE);
-        Integer nextFeatureRelease = Integer.valueOf(nextRelease.getVersionNumber());
+        MajorVersion nextRelease = discoClient.getLatestSts(false);
+        Integer nextFeatureRelease = nextRelease.getAsInt();
 
         // Versions
         JLabel versionLabel = new JLabel("Versions");
@@ -92,7 +96,7 @@ public class FoojayPanel extends javax.swing.JPanel {
         // Distributions
         JLabel distributionLabel = new JLabel("Distributions");
         distributionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        Distribution[] distributions = {Distribution.NONE, Distribution.ADOPT, Distribution.CORRETTO, Distribution.DRAGONWELL, Distribution.LIBERICA, Distribution.OPEN_JDK, Distribution.SAP_MACHINE, Distribution.ZULU};
+        Distribution[] distributions = {Distribution.NONE, Distribution.AOJ, Distribution.CORRETTO, Distribution.DRAGONWELL, Distribution.LIBERICA, Distribution.OJDK_BUILD, Distribution.SAP_MACHINE, Distribution.ZULU};
         distributionComboBox = new JComboBox<>(distributions);
         distributionComboBox.setRenderer(new DistributionListCellRenderer());
         distributionComboBox.addActionListener(e -> updateData());
@@ -105,7 +109,7 @@ public class FoojayPanel extends javax.swing.JPanel {
         // Bundle Types
         JLabel bundleTypeLabel = new JLabel("Bundle Type");
         bundleTypeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        BundleType[] bundleTypes = Arrays.stream(BundleType.values()).filter(bundleType -> BundleType.NONE != bundleType).filter(bundleType -> BundleType.NOT_FOUND != bundleType).toArray(BundleType[]::new);
+        PackageType[] bundleTypes = Arrays.stream(PackageType.values()).filter(bundleType -> PackageType.NONE != bundleType).filter(bundleType -> PackageType.NOT_FOUND != bundleType).toArray(PackageType[]::new);
         bundleTypeComboBox = new JComboBox<>(bundleTypes);
         bundleTypeComboBox.addActionListener(e -> updateData());
 
@@ -145,7 +149,11 @@ public class FoojayPanel extends javax.swing.JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setAutoCreateRowSorter(true);
         ListSelectionModel selectionModel = table.getSelectionModel();
-        selectionModel.addListSelectionListener(e -> downloadButton.setEnabled(table.getSelectedRow() >= 0));
+        selectionModel.addListSelectionListener(e -> {
+            boolean selectedSomething = table.getSelectedRow() >= 0;
+            downloadButton.setEnabled(selectedSomething);
+            firePropertyChange(PROP_DOWNLOAD_SELECTION, false, true);
+        });
         JScrollPane tableScrollPane = new JScrollPane(table);
         tableScrollPane.setPreferredSize(new Dimension(400, 300));
 
@@ -180,16 +188,16 @@ public class FoojayPanel extends javax.swing.JPanel {
     private void updateData() {
         Distribution distribution = (Distribution) distributionComboBox.getSelectedItem();
         Integer featureVersion = (Integer) versionComboBox.getSelectedItem();
-        boolean latest = latestCheckBox.isSelected();
+        Latest latest = latestCheckBox.isSelected() ? Latest.OVERALL : Latest.NONE;
         OperatingSystem operatingSystem = getOperatingSystem();
         Architecture architecture = Architecture.NONE;
         Bitness bitness = Bitness.NONE;
-        Extension extension = Extension.NONE;
-        BundleType bundleType = (BundleType) bundleTypeComboBox.getSelectedItem();
+        ArchiveType extension = ArchiveType.NONE;
+        PackageType bundleType = (PackageType) bundleTypeComboBox.getSelectedItem();
         Boolean fx = false;
         ReleaseStatus releaseStatus = ReleaseStatus.NONE;
-        SupportTerm supportTerm = SupportTerm.NONE;
-        List<Bundle> bundles = discoClient.getBundles(distribution, new VersionNumber(featureVersion), latest, operatingSystem, architecture, bitness, extension, bundleType, fx, releaseStatus, supportTerm);
+        TermOfSupport supportTerm = TermOfSupport.NONE;
+        List<Pkg> bundles = discoClient.getPkgs(distribution, new VersionNumber(featureVersion), latest, operatingSystem, architecture, bitness, extension, bundleType, fx, releaseStatus, supportTerm, Scope.PUBLIC);
         SwingUtilities.invokeLater(() -> {
             BundleTableModel tableModel = (BundleTableModel) table.getModel();
             tableModel.setBundles(bundles);
@@ -217,9 +225,14 @@ public class FoojayPanel extends javax.swing.JPanel {
         }
     }
 
-    public BundleFileInfo getBundleInfo() {
-        Bundle bundle = tableModel.getBundles().get(table.getSelectedRow());
-        BundleFileInfo bundleFileInfo = discoClient.getBundleFileInfo(bundle.getId());
+    public PkgInfo getBundleInfo() {
+        int index = table.getSelectedRow();
+        if (index < 0)
+            return null;
+        Pkg bundle = tableModel.getBundles().get(index);
+        if (bundle == null)
+            return null;
+        PkgInfo bundleFileInfo = discoClient.getPkgInfo(bundle.getEphemeralId(), bundle.getJavaVersion());
         return bundleFileInfo;
     }
 
@@ -237,11 +250,11 @@ public class FoojayPanel extends javax.swing.JPanel {
             return;
         }
 
-        Bundle bundle = tableModel.getBundles().get(table.getSelectedRow());
-        BundleFileInfo bundleFileInfo = discoClient.getBundleFileInfo(bundle.getId());
+        Pkg bundle = tableModel.getBundles().get(table.getSelectedRow());
+        PkgInfo bundleFileInfo = discoClient.getPkgInfo(bundle.getEphemeralId(), bundle.getJavaVersion());
         String fileName = destinationFolder + File.separator + bundleFileInfo.getFileName();
 
-        Future<?> future = discoClient.downloadBundle(bundle.getId(), fileName);
+        Future<?> future = discoClient.downloadPkg(bundleFileInfo, fileName);
         try {
             assert null == future.get();
         } catch (InterruptedException | ExecutionException e) {

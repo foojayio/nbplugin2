@@ -16,7 +16,7 @@
 
 package io.foojay.support;
 
-import io.foojay.api.discoclient.bundle.Distribution;
+import io.foojay.api.discoclient.pkg.Distribution;
 
 import javax.swing.*;
 import java.awt.*;

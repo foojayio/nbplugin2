@@ -1,8 +1,8 @@
 package io.foojay.support;
 
-import io.foojay.api.discoclient.util.PkgInfo;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.event.ChangeEvent;
@@ -11,25 +11,28 @@ import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
 
-public class SetupFoojayPlatform implements WizardDescriptor.AsynchronousValidatingPanel<WizardDescriptor> {
+public class DownloadPlatform implements WizardDescriptor.AsynchronousValidatingPanel<WizardDescriptor> {
 
-    private FoojayPanel component;
     private final List<ChangeListener> listeners = new ArrayList<>();
-
+    private DownloadPanel component;
     private final WizardState state;
-    
-    SetupFoojayPlatform(WizardState state) {
+
+    DownloadPlatform(WizardState state) {
         this.state = state;
     }
 
     @Override
-    public FoojayPanel getComponent() {
+    public DownloadPanel getComponent() {
         if (component == null) {
-            component = new FoojayPanel();
-            component.addPropertyChangeListener(FoojayPanel.PROP_DOWNLOAD_SELECTION, new PropertyChangeListener() {
+            component = new DownloadPanel(state);
+            component.addPropertyChangeListener(DownloadPanel.PROP_DOWNLOAD_FINISHED, new PropertyChangeListener() {
                 @Override
                 public void propertyChange(PropertyChangeEvent e) {
-                    ChangeEvent ce = new ChangeEvent(SetupFoojayPlatform.this);
+                    if (component.getDownload().isFile()) {
+                        component.putClientProperty(WizardDescriptor.PROP_WARNING_MESSAGE, "Could not unarchive package, please install it manually");
+                    }
+
+                    ChangeEvent ce = new ChangeEvent(DownloadPlatform.this);
                     listeners.forEach(l -> l.stateChanged(ce));
                 }
             });
@@ -44,7 +47,7 @@ public class SetupFoojayPlatform implements WizardDescriptor.AsynchronousValidat
 
     @Override
     public boolean isValid() {
-        return getComponent().getBundleInfo() != null;
+        return getComponent().isDownloadFinished();
     }
 
     @Override
@@ -63,10 +66,10 @@ public class SetupFoojayPlatform implements WizardDescriptor.AsynchronousValidat
 
     @Override
     public void storeSettings(WizardDescriptor wiz) {
-        PkgInfo bi = getComponent().getBundleInfo();
-        wiz.putProperty(FoojayPlatformIt.PROP_FILENAME, bi.getFileName());
-        wiz.putProperty(FoojayPlatformIt.PROP_FILEURL, bi.getDirectDownloadUri());
-        state.pkgInfo = bi;
+        File file = getComponent().getDownload();
+        if (file != null) {
+            wiz.putProperty(FoojayPlatformIt.PROP_DOWNLOAD, file.getAbsolutePath());
+        }
     }
 
     @Override

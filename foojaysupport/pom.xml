@@ -37,8 +37,8 @@
     <dependencies>
         <dependency>
             <groupId>io.foojay.api</groupId>
-            <artifactId>io-foojay-api</artifactId>
-            <version>RELEASE110</version>
+            <artifactId>discoclient</artifactId>
+            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
@@ -122,6 +122,16 @@
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-awt</artifactId>
             <version>RELEASE112</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-java-j2seplatform</artifactId>
+            <version>RELEASE122</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>1.20</version>
         </dependency>
     </dependencies>
     <properties>
