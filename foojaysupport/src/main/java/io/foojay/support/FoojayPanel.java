@@ -39,16 +39,16 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import org.netbeans.spi.java.platform.PlatformInstall;
-import org.openide.filesystems.FileUtil;
-import org.openide.util.Lookup;
+import org.openide.util.Exceptions;
+import org.openide.util.Utilities;
 
 public class FoojayPanel extends javax.swing.JPanel {
     public static final String PROP_DOWNLOAD_SELECTION = "downloadSelection";
 
-    private DiscoClient discoClient;
+    private final DiscoClient discoClient;
     private JComboBox<Integer> versionComboBox;
     private JComboBox<Distribution> distributionComboBox;
     private JComboBox<PackageType> bundleTypeComboBox;
@@ -70,24 +70,47 @@ public class FoojayPanel extends javax.swing.JPanel {
         discoClient = new DiscoClient();
         discoClient.setOnDCEvent(e -> handleDCEvent(this, e));
 
-        // Get release infos
-        MajorVersion lastLtsRelease = discoClient.getLatestLts(false);
-        Integer lastLtsFeatureRelease = lastLtsRelease.getAsInt();
+        SwingWorker comboboxInit = new SwingWorker<Map.Entry<List<Integer>, Integer>, Object>() {
 
-        MajorVersion nextRelease = discoClient.getLatestSts(false);
-        Integer nextFeatureRelease = nextRelease.getAsInt();
+            @Override
+            protected Map.Entry<List<Integer>, Integer> doInBackground() throws Exception {
+                synchronized (discoClient) {
+                    // Get release infos
+                    MajorVersion lastLtsRelease = discoClient.getLatestLts(false);
+                    Integer lastLtsFeatureRelease = lastLtsRelease.getAsInt();
+
+                    MajorVersion nextRelease = discoClient.getLatestSts(false);
+                    Integer nextFeatureRelease = nextRelease.getAsInt();
+
+                    List<Integer> versionNumbers = new ArrayList<>();
+                    for (Integer i = 6; i <= nextFeatureRelease; i++) {
+                        versionNumbers.add(i);
+                    }
+                    return Map.entry(versionNumbers, lastLtsFeatureRelease);
+                }
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    Map.Entry<List<Integer>, Integer> c = get();
+                    ((DefaultComboBoxModel) versionComboBox.getModel()).addAll(c.getKey());
+                    versionComboBox.setSelectedItem(c.getValue());
+                } catch (InterruptedException | ExecutionException ex) {
+                    //TODO: bad, show something to user, auto-retry?
+                    Exceptions.printStackTrace(ex);
+                }
+            }
+
+        };
 
         // Versions
         JLabel versionLabel = new JLabel("Versions");
         versionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        List<Integer> versionNumbers = new ArrayList<>();
-        for (Integer i = 6; i <= nextFeatureRelease; i++) {
-            versionNumbers.add(i);
-        }
-        versionComboBox = new JComboBox<>(versionNumbers.toArray(new Integer[0]));
-        versionComboBox.setSelectedItem(lastLtsFeatureRelease);
+        versionComboBox = new JComboBox<>();
         versionComboBox.addActionListener(e -> updateData());
-
+        comboboxInit.execute();
+        
         Box versionsVBox = Box.createVerticalBox();
         versionsVBox.add(versionLabel);
         versionsVBox.add(versionComboBox);
@@ -197,12 +220,28 @@ public class FoojayPanel extends javax.swing.JPanel {
         Boolean fx = false;
         ReleaseStatus releaseStatus = ReleaseStatus.NONE;
         TermOfSupport supportTerm = TermOfSupport.NONE;
-        List<Pkg> bundles = discoClient.getPkgs(distribution, new VersionNumber(featureVersion), latest, operatingSystem, architecture, bitness, extension, bundleType, fx, releaseStatus, supportTerm, Scope.PUBLIC);
-        SwingUtilities.invokeLater(() -> {
-            BundleTableModel tableModel = (BundleTableModel) table.getModel();
-            tableModel.setBundles(bundles);
-            tableModel.fireTableDataChanged();
-        });
+        this.setEnabled(false);
+        new SwingWorker<List<Pkg>, Object>() {
+            @Override
+            protected List<Pkg> doInBackground() throws Exception {
+                synchronized (discoClient) {
+                    List<Pkg> bundles = discoClient.getPkgs(distribution, new VersionNumber(featureVersion), latest, operatingSystem, architecture, bitness, extension, bundleType, fx, releaseStatus, supportTerm, Scope.PUBLIC);
+                    return bundles;
+                }
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    FoojayPanel.this.setEnabled(true);
+                    BundleTableModel tableModel = (BundleTableModel) table.getModel();
+                    tableModel.setBundles(get());
+                } catch (InterruptedException | ExecutionException ex) {
+                    //TODO: Show something to user, offer reload, auto-reload in N seconds?
+                    Exceptions.printStackTrace(ex);
+                }
+            }
+        }.execute();
     }
 
     private void handleDCEvent(final Component parent, final DCEvent event) {
@@ -263,18 +302,18 @@ public class FoojayPanel extends javax.swing.JPanel {
     }
 
     private OperatingSystem getOperatingSystem() {
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.indexOf("win") >= 0) {
-            return OperatingSystem.WINDOWS;
-        } else if (os.indexOf("mac") >= 0) {
+        if (Utilities.isMac())
             return OperatingSystem.MACOS;
-        } else if (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0) {
-            return OperatingSystem.LINUX;
-        } else if (os.indexOf("sunos") >= 0) {
-            return OperatingSystem.SOLARIS;
-        } else {
-            return OperatingSystem.NONE;
+        if (Utilities.isWindows())
+            return OperatingSystem.WINDOWS;
+        if (Utilities.isUnix()) {
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("sunos"))
+                return OperatingSystem.SOLARIS;
+            else
+                return OperatingSystem.LINUX;
         }
+        return OperatingSystem.NONE;
     }
 
 }
