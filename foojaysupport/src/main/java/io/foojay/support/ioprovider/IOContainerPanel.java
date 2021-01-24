@@ -5,8 +5,10 @@ import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.openide.windows.IOContainer;
 
+@SuppressWarnings("guieffect")
 public class IOContainerPanel extends JPanel implements IOContainer.Provider {
     
     public IOContainerPanel() {
@@ -37,6 +39,7 @@ public class IOContainerPanel extends JPanel implements IOContainer.Provider {
     public void add(JComponent c, IOContainer.CallBacks callback) {
         super.add(c, BorderLayout.CENTER);
         //TODO: delegate callbacks?
+        //TODO: assert only 1 child component?
     }
 
     @Override
@@ -51,8 +54,8 @@ public class IOContainerPanel extends JPanel implements IOContainer.Provider {
     }
 
     @Override
-    public JComponent getSelected() {
-        return getComponentCount() == 0 ? null : (JComponent) super.getComponent(0);
+    public @NonNull JComponent getSelected() {
+        return getComponentCount() == 0 ? this /* correct ? */ : (JComponent) super.getComponent(0);
     }
 
     @Override

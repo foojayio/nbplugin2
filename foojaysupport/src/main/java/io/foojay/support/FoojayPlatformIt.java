@@ -16,6 +16,7 @@ import org.openide.WizardDescriptor;
 import org.openide.awt.StatusDisplayer;
 import org.openide.filesystems.FileUtil;
 
+@SuppressWarnings("initialization")
 public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIterator<WizardDescriptor> {
 
     public static final String PROP_FILENAME = "fileName"; //NOI18N
@@ -28,6 +29,7 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
     private WizardDescriptor wizard;
     private String[] names;
 
+    @SuppressWarnings("call.invalid.ui") //TODO: Remove this and fix the underlying warning
     private List<WizardDescriptor.Panel<WizardDescriptor>> getPanels() {
         if (panels == null) {
             WizardState state = new WizardState();

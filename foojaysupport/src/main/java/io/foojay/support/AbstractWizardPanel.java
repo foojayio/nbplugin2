@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import org.checkerframework.checker.guieffect.qual.UIEffect;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
@@ -12,17 +15,22 @@ import org.openide.util.HelpCtx;
 public abstract class AbstractWizardPanel<C extends Component> implements WizardDescriptor.AsynchronousValidatingPanel<WizardDescriptor> {
 
     private final List<ChangeListener> listeners = new ArrayList<>();
-    private C component;
+    private @MonotonicNonNull C component;
 
+    @UIEffect
+    @NonNull
     protected abstract C createComponent();
 
     @Override
+    @UIEffect
+    @SuppressWarnings("override.effect.invalid")
     public C getComponent() {
         if (component == null)
             component = createComponent();
         return component;
     }
 
+    @UIEffect
     protected void fireChangeListeners() {
         ChangeEvent ce = new ChangeEvent(this);
         listeners.forEach(l -> l.stateChanged(ce));

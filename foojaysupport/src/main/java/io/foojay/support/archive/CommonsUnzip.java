@@ -29,7 +29,7 @@ public class CommonsUnzip implements Unarchiver {
                         throw new IOException("Could not create dirs" + f);
                 } else {
                     File parent = f.getParentFile();
-                    if (!parent.isDirectory() && !parent.mkdirs())
+                    if (parent == null || (!parent.isDirectory() && !parent.mkdirs()))
                         throw new IOException("Could not create dirs" + parent);
                     try ( OutputStream o = Files.newOutputStream(f.toPath())) {
                         IOUtils.copy(i, o);

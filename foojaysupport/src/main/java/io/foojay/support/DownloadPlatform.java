@@ -1,6 +1,7 @@
 package io.foojay.support;
 
 import java.io.File;
+import org.checkerframework.checker.guieffect.qual.UIEffect;
 import org.openide.WizardDescriptor;
 
 public class DownloadPlatform extends AbstractWizardPanel<DownloadPanel> {
@@ -11,9 +12,10 @@ public class DownloadPlatform extends AbstractWizardPanel<DownloadPanel> {
         this.state = state;
     }
 
+    @UIEffect
     @Override
     protected DownloadPanel createComponent() {
-        DownloadPanel component = new DownloadPanel(state);
+        DownloadPanel component = DownloadPanel.create(state);
         component.addPropertyChangeListener(DownloadPanel.PROP_DOWNLOAD_FINISHED, (e) -> {
             if (component.getDownload().isFile())
                 component.putClientProperty(WizardDescriptor.PROP_WARNING_MESSAGE, "Could not unarchive package, please install it manually");
