@@ -30,17 +30,14 @@ import io.foojay.api.discoclient.pkg.Latest;
 import io.foojay.api.discoclient.pkg.MajorVersion;
 import io.foojay.api.discoclient.pkg.Scope;
 import io.foojay.api.discoclient.pkg.TermOfSupport;
-import io.foojay.api.discoclient.util.PkgInfo;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.openide.util.Exceptions;
@@ -74,11 +71,6 @@ public class FoojayPanel extends javax.swing.JPanel {
 
     @UIEffect
     private void init() {
-//        JFrame frame = new JFrame("Foojay Disco API");
-//        frame.setSize(280, 100);
-//        frame.setLocationRelativeTo(null);
-//        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
         setName("Connect to OpenJDK Discovery Service");
 
         SwingWorker comboboxInit = new SwingWorker<Map.Entry<List<Integer>, Integer>, Object>() {
@@ -185,7 +177,8 @@ public class FoojayPanel extends javax.swing.JPanel {
         ListSelectionModel selectionModel = table.getSelectionModel();
         selectionModel.addListSelectionListener(e -> {
             boolean selectedSomething = table.getSelectedRow() >= 0;
-            firePropertyChange(PROP_DOWNLOAD_SELECTION, false, true);
+            if (selectedSomething)
+                firePropertyChange(PROP_DOWNLOAD_SELECTION, false, true);
         });
         JScrollPane tableScrollPane = new JScrollPane(table);
         tableScrollPane.setPreferredSize(new Dimension(400, 300));
@@ -232,38 +225,9 @@ public class FoojayPanel extends javax.swing.JPanel {
         int index = table.getSelectedRow();
         if (index < 0)
             return null;
-        Pkg bundle = tableModel.getBundles().get(index);
+        int modelIndex = table.convertRowIndexToModel(index);
+        Pkg bundle = tableModel.getBundles().get(modelIndex);
         return bundle;
-    }
-
-    @UIEffect
-    private void downloadBundle(final Component parent) {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(new File("."));
-        fileChooser.setDialogTitle("Select destination folder");
-        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        fileChooser.setAcceptAllFileFilterUsed(false);
-
-        String destinationFolder;
-        if (fileChooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
-            File folder = fileChooser.getSelectedFile();
-            if (folder == null)
-                return;
-            destinationFolder = folder.getAbsolutePath();
-        } else {
-            return;
-        }
-
-        Pkg bundle = tableModel.getBundles().get(table.getSelectedRow());
-        PkgInfo bundleFileInfo = discoClient.getPkgInfo(bundle.getEphemeralId(), bundle.getJavaVersion());
-        String fileName = destinationFolder + File.separator + bundleFileInfo.getFileName();
-
-        Future<?> future = discoClient.downloadPkg(bundleFileInfo, fileName);
-        try {
-            assert null == future.get();
-        } catch (InterruptedException | ExecutionException e) {
-
-        }
     }
 
     private OperatingSystem getOperatingSystem() {
