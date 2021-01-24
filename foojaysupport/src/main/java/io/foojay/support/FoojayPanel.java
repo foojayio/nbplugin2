@@ -25,7 +25,6 @@ import io.foojay.api.discoclient.pkg.OperatingSystem;
 //import io.foojay.api.discoclient.pkg.Release;
 import io.foojay.api.discoclient.pkg.ReleaseStatus;
 import io.foojay.api.discoclient.pkg.VersionNumber;
-import io.foojay.api.discoclient.event.DCEvent;
 import io.foojay.api.discoclient.pkg.ArchiveType;
 import io.foojay.api.discoclient.pkg.Latest;
 import io.foojay.api.discoclient.pkg.MajorVersion;
@@ -55,8 +54,6 @@ public class FoojayPanel extends javax.swing.JPanel {
     private JCheckBox latestCheckBox;
     private BundleTableModel tableModel;
     private JTable table;
-    private JProgressBar progressBar;
-    private JButton downloadButton;
 
     public FoojayPanel() {
 //        JFrame frame = new JFrame("Foojay Disco API");
@@ -68,7 +65,6 @@ public class FoojayPanel extends javax.swing.JPanel {
 
         // Setup disco client
         discoClient = new DiscoClient();
-        discoClient.setOnDCEvent(e -> handleDCEvent(this, e));
 
         SwingWorker comboboxInit = new SwingWorker<Map.Entry<List<Integer>, Integer>, Object>() {
 
@@ -174,38 +170,15 @@ public class FoojayPanel extends javax.swing.JPanel {
         ListSelectionModel selectionModel = table.getSelectionModel();
         selectionModel.addListSelectionListener(e -> {
             boolean selectedSomething = table.getSelectedRow() >= 0;
-            downloadButton.setEnabled(selectedSomething);
             firePropertyChange(PROP_DOWNLOAD_SELECTION, false, true);
         });
         JScrollPane tableScrollPane = new JScrollPane(table);
         tableScrollPane.setPreferredSize(new Dimension(400, 300));
 
-        // Footer Box
-        progressBar = new JProgressBar(0, 100);
-        progressBar.setValue(0);
-        progressBar.setStringPainted(true);
-
-        downloadButton = new JButton("Download");
-        downloadButton.setEnabled(false);
-        downloadButton.addActionListener(e -> downloadBundle(this));
-
-        Box fBox = Box.createHorizontalBox();
-        fBox.add(progressBar);
-        fBox.add(downloadButton);
-
-        JPanel footerPanel = new JPanel();
-        footerPanel.setLayout(new BoxLayout(footerPanel, BoxLayout.PAGE_AXIS));
-        footerPanel.add(fBox);
-
         // Setup main layout
         setLayout(new BorderLayout());
         add(headerPanel, BorderLayout.NORTH);
         add(tableScrollPane, BorderLayout.CENTER);
-//        add(footerPanel, BorderLayout.SOUTH);
-
-        // Show frame
-//        frame.pack();
-//        frame.setVisible(true);
     }
 
     private void updateData() {
@@ -242,26 +215,6 @@ public class FoojayPanel extends javax.swing.JPanel {
                 }
             }
         }.execute();
-    }
-
-    private void handleDCEvent(final Component parent, final DCEvent event) {
-        switch (event.getType()) {
-            case DOWNLOAD_STARTED:
-                SwingUtilities.invokeLater(() -> downloadButton.setEnabled(false));
-                break;
-            case DOWNLOAD_FINISHED:
-                SwingUtilities.invokeLater(() -> {
-                    progressBar.setValue(0);
-                    downloadButton.setEnabled(true);
-                });
-                break;
-            case DOWNLOAD_PROGRESS:
-                SwingUtilities.invokeLater(() -> progressBar.setValue((int) ((double) event.getFraction() / (double) event.getFileSize() * 100)));
-                break;
-            case DOWNLOAD_FAILED:
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(parent, "Download failed", "Attention", JOptionPane.WARNING_MESSAGE));
-                break;
-        }
     }
 
     public PkgInfo getBundleInfo() {

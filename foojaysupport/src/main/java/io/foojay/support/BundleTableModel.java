@@ -28,7 +28,7 @@ import java.util.List;
 
 
 public class BundleTableModel extends AbstractTableModel {
-    private String[]     columnNames = { "Version", "Distribution", "Vendor", "Bundle Type", "Release Status", "Extension" };
+    private String[]     columnNames = { "Version", "Distribution", "Architecture", "Bundle Type", "Release Status", "Extension" };
     private List<Pkg> bundles;
 
 
@@ -82,8 +82,7 @@ public class BundleTableModel extends AbstractTableModel {
         switch(col) {
             case 0 : return bundle.getDistributionVersion();
             case 1 : return bundle.getDistribution().getUiString();
-            //TODO: EMI: Remove Vendor column
-            case 2 : return bundle.getDistribution().getUiString();
+            case 2 : return bundle.getArchitecture().getUiString();
             case 3 : return bundle.getPackageType().getUiString();
             case 4 : return bundle.getReleaseStatus().name();
             case 5 : return bundle.getArchiveType().getUiString();
