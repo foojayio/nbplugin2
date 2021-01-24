@@ -40,6 +40,7 @@ public class BundleTableModel extends AbstractTableModel {
     public List<Pkg> getBundles() { return bundles; }
     public void setBundles(final List<Pkg> bundles) {
         this.bundles = bundles;
+        this.fireTableDataChanged();
     }
 
     public String getColumnName(final int col) {
