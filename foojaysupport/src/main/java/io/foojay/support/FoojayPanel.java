@@ -148,6 +148,7 @@ public class FoojayPanel extends javax.swing.JPanel {
         JLabel latestLabel = new JLabel("Latest");
         latestLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         latestCheckBox = new JCheckBox();
+        latestCheckBox.setSelected(true);
         latestCheckBox.addActionListener(e -> updateData());
 
         Box latestVBox = Box.createVerticalBox();
@@ -192,7 +193,11 @@ public class FoojayPanel extends javax.swing.JPanel {
     @UIEffect
     private void updateData() {
         Distribution distribution = (Distribution) distributionComboBox.getSelectedItem();
+        if (distribution == null)
+            return;
         Integer featureVersion = (Integer) versionComboBox.getSelectedItem();
+        if (featureVersion == null)
+            return;
         Latest latest = latestCheckBox.isSelected() ? Latest.OVERALL : Latest.NONE;
         OperatingSystem operatingSystem = getOperatingSystem();
         Architecture architecture = Architecture.NONE;
