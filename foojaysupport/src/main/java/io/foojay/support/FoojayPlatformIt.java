@@ -25,14 +25,13 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
 
     private List<WizardDescriptor.Panel<WizardDescriptor>> panels;
     private WizardDescriptor wizard;
+    private WizardState state = new WizardState();
     private String[] names;
 
     @SuppressWarnings("call.invalid.ui") //TODO: Remove this and fix the underlying warning
     private List<WizardDescriptor.Panel<WizardDescriptor>> getPanels() {
         if (panels == null) {
-            WizardState state = new WizardState();
-            
-            panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
+            panels = new ArrayList<>();
             panels.add(new SetupFoojayPlatform(state));
             panels.add(new DownloadPlatform(state));
             String[] steps = new String[panels.size()];
@@ -108,11 +107,14 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
     public Set<JavaPlatform> instantiate() throws IOException {
         //TODO: Download (in background?)
         String downloadedFolder = (String) wizard.getProperty(FoojayPlatformIt.PROP_DOWNLOAD);
-        if (downloadedFolder != null)
-            return Collections.singleton(J2SEPlatformCreator.createJ2SEPlatform(FileUtil.toFileObject(new File(downloadedFolder))));
-        else
+        if (downloadedFolder != null) {
+            String name = state.pkgInfo.getDistribution().getUiString() + " "
+                    + state.pkgInfo.getJavaVersion().toString();
+            return Collections.singleton(J2SEPlatformCreator.createJ2SEPlatform(FileUtil.toFileObject(new File(downloadedFolder)), name));
+        } else {
             //TODO: notifcation?
             return Collections.EMPTY_SET;
+        }
     }
     
     @Override
