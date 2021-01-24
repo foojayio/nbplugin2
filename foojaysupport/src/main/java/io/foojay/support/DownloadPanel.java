@@ -2,7 +2,8 @@ package io.foojay.support;
 
 import io.foojay.api.discoclient.DiscoClient;
 import io.foojay.api.discoclient.event.DCEvent;
-import io.foojay.api.discoclient.util.PkgInfo;
+import io.foojay.api.discoclient.pkg.Pkg;
+import static io.foojay.support.SwingWorker2.submit;
 import io.foojay.support.archive.JDKCommonsUnzip;
 import io.foojay.support.archive.UnarchiveUtils;
 import io.foojay.support.ioprovider.IOContainerPanel;
@@ -68,17 +69,21 @@ public class DownloadPanel extends javax.swing.JPanel {
     }
 
     private void downloadBundle(File destinationFolder) {
-        PkgInfo pkgInfo = state.pkgInfo;
-        download = new File(destinationFolder, pkgInfo.getFileName());
+        submit(() -> {
+            Pkg bundle = state.pkgInfo;
+            return discoClient.getPkgInfo(bundle.getEphemeralId(), bundle.getJavaVersion());
+        }).then(pkgInfo -> {
+            download = new File(destinationFolder, pkgInfo.getFileName());
 
-//        if (download.exists())
-//            handleDCEvent(this, new DCEvent(DCEventType.DOWNLOAD_FINISHED, 1));
-        Future<?> future = discoClient.downloadPkg(pkgInfo, download.getAbsolutePath());
-//        try {
-//            assert null == future.get();
-//        } catch (InterruptedException | ExecutionException e) {
-//
-//        }
+            //        if (download.exists())
+            //            handleDCEvent(this, new DCEvent(DCEventType.DOWNLOAD_FINISHED, 1));
+            Future<?> future = discoClient.downloadPkg(pkgInfo, download.getAbsolutePath());
+            //        try {
+            //            assert null == future.get();
+            //        } catch (InterruptedException | ExecutionException e) {
+            //
+            //        }
+        }).execute();
     }
 
     private void handleDCEvent(final Component parent, final DCEvent event) {

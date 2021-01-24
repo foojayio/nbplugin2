@@ -228,15 +228,12 @@ public class FoojayPanel extends javax.swing.JPanel {
     }
 
     @UIEffect
-    public @Nullable PkgInfo getBundleInfo() {
+    public @Nullable Pkg getBundleInfo() {
         int index = table.getSelectedRow();
         if (index < 0)
             return null;
         Pkg bundle = tableModel.getBundles().get(index);
-        if (bundle == null)
-            return null;
-        PkgInfo bundleFileInfo = discoClient.getPkgInfo(bundle.getEphemeralId(), bundle.getJavaVersion());
-        return bundleFileInfo;
+        return bundle;
     }
 
     @UIEffect

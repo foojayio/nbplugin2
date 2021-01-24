@@ -19,9 +19,7 @@ import org.openide.filesystems.FileUtil;
 @SuppressWarnings("initialization")
 public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIterator<WizardDescriptor> {
 
-    public static final String PROP_FILENAME = "fileName"; //NOI18N
     public static final String PROP_DOWNLOAD = "download"; //NOI18N
-    public static final String PROP_FILEURL = "url"; //NOI18N
     
     private int index;
 
@@ -108,9 +106,6 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
 
     @Override
     public Set<JavaPlatform> instantiate() throws IOException {
-        String fileName = (String) wizard.getProperty(FoojayPlatformIt.PROP_FILENAME); 
-        String fileURL = (String) wizard.getProperty(FoojayPlatformIt.PROP_FILEURL);
-        StatusDisplayer.getDefault().setStatusText(fileName + " / " + fileURL);
         //TODO: Download (in background?)
         String downloadedFolder = (String) wizard.getProperty(FoojayPlatformIt.PROP_DOWNLOAD);
         if (downloadedFolder != null)
