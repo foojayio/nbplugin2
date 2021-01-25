@@ -30,20 +30,20 @@ import io.foojay.api.discoclient.pkg.Latest;
 import io.foojay.api.discoclient.pkg.MajorVersion;
 import io.foojay.api.discoclient.pkg.Scope;
 import io.foojay.api.discoclient.pkg.TermOfSupport;
-import io.foojay.api.discoclient.util.PkgInfo;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import org.checkerframework.checker.guieffect.qual.UIEffect;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.openide.util.Exceptions;
 import org.openide.util.Utilities;
 
+@SuppressWarnings("initialization")
 public class FoojayPanel extends javax.swing.JPanel {
     public static final String PROP_DOWNLOAD_SELECTION = "downloadSelection";
 
@@ -55,16 +55,23 @@ public class FoojayPanel extends javax.swing.JPanel {
     private BundleTableModel tableModel;
     private JTable table;
 
-    public FoojayPanel() {
-//        JFrame frame = new JFrame("Foojay Disco API");
-//        frame.setSize(280, 100);
-//        frame.setLocationRelativeTo(null);
-//        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    @UIEffect
+    public static FoojayPanel create() {
+        FoojayPanel f = new FoojayPanel();
+        f.init();
+        return f;
+    }
 
-        setName("Connect to OpenJDK Discovery Service");
-
+    @SuppressWarnings("initialization")
+    @UIEffect
+    private FoojayPanel() {
         // Setup disco client
         discoClient = new DiscoClient();
+    }
+
+    @UIEffect
+    private void init() {
+        setName("Connect to OpenJDK Discovery Service");
 
         SwingWorker comboboxInit = new SwingWorker<Map.Entry<List<Integer>, Integer>, Object>() {
 
@@ -106,7 +113,7 @@ public class FoojayPanel extends javax.swing.JPanel {
         versionComboBox = new JComboBox<>();
         versionComboBox.addActionListener(e -> updateData());
         comboboxInit.execute();
-        
+
         Box versionsVBox = Box.createVerticalBox();
         versionsVBox.add(versionLabel);
         versionsVBox.add(versionComboBox);
@@ -141,6 +148,7 @@ public class FoojayPanel extends javax.swing.JPanel {
         JLabel latestLabel = new JLabel("Latest");
         latestLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         latestCheckBox = new JCheckBox();
+        latestCheckBox.setSelected(true);
         latestCheckBox.addActionListener(e -> updateData());
 
         Box latestVBox = Box.createVerticalBox();
@@ -170,7 +178,8 @@ public class FoojayPanel extends javax.swing.JPanel {
         ListSelectionModel selectionModel = table.getSelectionModel();
         selectionModel.addListSelectionListener(e -> {
             boolean selectedSomething = table.getSelectedRow() >= 0;
-            firePropertyChange(PROP_DOWNLOAD_SELECTION, false, true);
+            if (selectedSomething)
+                firePropertyChange(PROP_DOWNLOAD_SELECTION, false, true);
         });
         JScrollPane tableScrollPane = new JScrollPane(table);
         tableScrollPane.setPreferredSize(new Dimension(400, 300));
@@ -181,9 +190,14 @@ public class FoojayPanel extends javax.swing.JPanel {
         add(tableScrollPane, BorderLayout.CENTER);
     }
 
+    @UIEffect
     private void updateData() {
         Distribution distribution = (Distribution) distributionComboBox.getSelectedItem();
+        if (distribution == null)
+            return;
         Integer featureVersion = (Integer) versionComboBox.getSelectedItem();
+        if (featureVersion == null)
+            return;
         Latest latest = latestCheckBox.isSelected() ? Latest.OVERALL : Latest.NONE;
         OperatingSystem operatingSystem = getOperatingSystem();
         Architecture architecture = Architecture.NONE;
@@ -194,64 +208,31 @@ public class FoojayPanel extends javax.swing.JPanel {
         ReleaseStatus releaseStatus = ReleaseStatus.NONE;
         TermOfSupport supportTerm = TermOfSupport.NONE;
         this.setEnabled(false);
-        new SwingWorker<List<Pkg>, Object>() {
-            @Override
-            protected List<Pkg> doInBackground() throws Exception {
-                synchronized (discoClient) {
-                    List<Pkg> bundles = discoClient.getPkgs(distribution, new VersionNumber(featureVersion), latest, operatingSystem, architecture, bitness, extension, bundleType, fx, releaseStatus, supportTerm, Scope.PUBLIC);
-                    return bundles;
-                }
+        SwingWorker2.submit(() -> {
+            synchronized (discoClient) {
+                List<Pkg> bundles = discoClient.getPkgs(distribution, new VersionNumber(featureVersion), latest, operatingSystem, architecture, bitness, extension, bundleType, fx, releaseStatus, supportTerm, Scope.PUBLIC);
+                return bundles;
             }
-
-            @Override
-            protected void done() {
-                try {
-                    FoojayPanel.this.setEnabled(true);
-                    BundleTableModel tableModel = (BundleTableModel) table.getModel();
-                    tableModel.setBundles(get());
-                } catch (InterruptedException | ExecutionException ex) {
-                    //TODO: Show something to user, offer reload, auto-reload in N seconds?
-                    Exceptions.printStackTrace(ex);
-                }
-            }
-        }.execute();
+        }).then(this::setPackages)
+                //TODO: Show something to user, offer reload, auto-reload in N seconds?
+                .handle(Exceptions::printStackTrace)
+                .execute();
     }
 
-    public PkgInfo getBundleInfo() {
+    @UIEffect
+    private void setPackages(List<Pkg> bundles) {
+        FoojayPanel.this.setEnabled(true);
+        tableModel.setBundles(bundles);
+    }
+
+    @UIEffect
+    public @Nullable Pkg getBundleInfo() {
         int index = table.getSelectedRow();
         if (index < 0)
             return null;
-        Pkg bundle = tableModel.getBundles().get(index);
-        if (bundle == null)
-            return null;
-        PkgInfo bundleFileInfo = discoClient.getPkgInfo(bundle.getEphemeralId(), bundle.getJavaVersion());
-        return bundleFileInfo;
-    }
-
-    private void downloadBundle(final Component parent) {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(new File("."));
-        fileChooser.setDialogTitle("Select destination folder");
-        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        fileChooser.setAcceptAllFileFilterUsed(false);
-
-        String destinationFolder;
-        if (fileChooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
-            destinationFolder = fileChooser.getSelectedFile().getAbsolutePath();
-        } else {
-            return;
-        }
-
-        Pkg bundle = tableModel.getBundles().get(table.getSelectedRow());
-        PkgInfo bundleFileInfo = discoClient.getPkgInfo(bundle.getEphemeralId(), bundle.getJavaVersion());
-        String fileName = destinationFolder + File.separator + bundleFileInfo.getFileName();
-
-        Future<?> future = discoClient.downloadPkg(bundleFileInfo, fileName);
-        try {
-            assert null == future.get();
-        } catch (InterruptedException | ExecutionException e) {
-
-        }
+        int modelIndex = table.convertRowIndexToModel(index);
+        Pkg bundle = tableModel.getBundles().get(modelIndex);
+        return bundle;
     }
 
     private OperatingSystem getOperatingSystem() {

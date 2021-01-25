@@ -20,11 +20,15 @@ import io.foojay.api.discoclient.pkg.Distribution;
 
 import javax.swing.*;
 import java.awt.*;
+import org.checkerframework.checker.guieffect.qual.UIEffect;
+import org.checkerframework.checker.guieffect.qual.UIType;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 
+@UIType
 public class DistributionListCellRenderer extends DefaultListCellRenderer {
 
-    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+    public Component getListCellRendererComponent(JList list, @Nullable Object value, int index, boolean isSelected, boolean cellHasFocus) {
         if (value instanceof Distribution) {
             value = ((Distribution) value).getUiString();
         }

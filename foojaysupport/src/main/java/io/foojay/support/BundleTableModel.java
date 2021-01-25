@@ -25,6 +25,8 @@ import io.foojay.api.discoclient.pkg.VersionNumber;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.List;
+import org.checkerframework.checker.index.qual.NonNegative;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 
 public class BundleTableModel extends AbstractTableModel {
@@ -43,7 +45,7 @@ public class BundleTableModel extends AbstractTableModel {
         this.fireTableDataChanged();
     }
 
-    public String getColumnName(final int col) {
+    public @NonNull String getColumnName(final int col) {
         switch(col) {
             case 0 :
             case 1 :
@@ -51,7 +53,7 @@ public class BundleTableModel extends AbstractTableModel {
             case 3 :
             case 4 :
             case 5 : return columnNames[col];
-            default: return null;
+            default: throw new IllegalArgumentException("Column not found " + col);
         }
     }
 
@@ -63,7 +65,7 @@ public class BundleTableModel extends AbstractTableModel {
             case 3 : return PackageType.class;
             case 4 : return ReleaseStatus.class;
             case 5 : return ArchiveType.class;
-            default: return null;
+            default: return super.getColumnClass(col);
         }
     }
 
@@ -76,8 +78,9 @@ public class BundleTableModel extends AbstractTableModel {
         return columnNames.length;
     }
 
-    @Override public Object getValueAt(final int row, final int col) {
-        if (row < 0 || row > bundles.size()) { return null; }
+    @Override public @NonNull Object getValueAt(final @NonNegative int row, final @NonNegative int col) {
+        if (row < 0 || row >= getRowCount())
+            throw new IllegalArgumentException("Row not found " + row);
         final Pkg bundle = bundles.get(row);
         switch(col) {
             case 0 : return bundle.getDistributionVersion();
@@ -86,7 +89,7 @@ public class BundleTableModel extends AbstractTableModel {
             case 3 : return bundle.getPackageType().getUiString();
             case 4 : return bundle.getReleaseStatus().name();
             case 5 : return bundle.getArchiveType().getUiString();
-            default: return null;
+            default: throw new IllegalArgumentException("Column not found " + col);
         }
     }
 }
