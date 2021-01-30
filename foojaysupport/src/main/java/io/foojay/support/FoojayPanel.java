@@ -27,6 +27,7 @@ import io.foojay.api.discoclient.pkg.ReleaseStatus;
 import io.foojay.api.discoclient.pkg.VersionNumber;
 import io.foojay.api.discoclient.pkg.ArchiveType;
 import io.foojay.api.discoclient.pkg.Latest;
+import io.foojay.api.discoclient.pkg.LibCType;
 import io.foojay.api.discoclient.pkg.MajorVersion;
 import io.foojay.api.discoclient.pkg.Scope;
 import io.foojay.api.discoclient.pkg.TermOfSupport;
@@ -210,7 +211,7 @@ public class FoojayPanel extends javax.swing.JPanel {
         this.setEnabled(false);
         SwingWorker2.submit(() -> {
             synchronized (discoClient) {
-                List<Pkg> bundles = discoClient.getPkgs(distribution, new VersionNumber(featureVersion), latest, operatingSystem, architecture, bitness, extension, bundleType, fx, releaseStatus, supportTerm, Scope.PUBLIC);
+                List<Pkg> bundles = discoClient.getPkgs(distribution, new VersionNumber(featureVersion), latest, operatingSystem, LibCType.NONE, architecture, bitness, extension, bundleType, fx, true, releaseStatus, supportTerm, Scope.PUBLIC);
                 return bundles;
             }
         }).then(this::setPackages)
