@@ -1,14 +1,14 @@
 package io.foojay.support;
 
 import io.foojay.api.discoclient.DiscoClient;
-import io.foojay.api.discoclient.event.DCEvent;
+import io.foojay.api.discoclient.event.DownloadEvt;
+import io.foojay.api.discoclient.event.Evt;
 import io.foojay.api.discoclient.pkg.Pkg;
 import static io.foojay.support.SwingWorker2.submit;
 import io.foojay.support.archive.JDKCommonsUnzip;
 import io.foojay.support.archive.UnarchiveUtils;
 import io.foojay.support.ioprovider.IOContainerPanel;
 import java.awt.CardLayout;
-import java.awt.Component;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Future;
@@ -58,7 +58,10 @@ public class DownloadPanel extends javax.swing.JPanel {
 
         this.executionPanel = new IOContainerPanel();
 
-        discoClient.setOnDCEvent(e -> handleDCEvent(this, e));
+        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_STARTED, this::handleDownloadStarted);
+        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_FINISHED, this::handleDownloadFinished);
+        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_FAILED, this::handleDownloadFailed);
+        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_PROGRESS, this::handleDownloadProgress);
     }
 
     @Override
@@ -86,15 +89,14 @@ public class DownloadPanel extends javax.swing.JPanel {
         }).execute();
     }
 
-    private void handleDCEvent(final Component parent, final DCEvent event) {
-        switch (event.getType()) {
-            case DOWNLOAD_STARTED:
+    private void handleDownloadStarted(Evt e) {
                 SwingUtilities.invokeLater(() -> {
                     statusLabel.setText("Downloading...");
                     downloadButton.setEnabled(false);
                 });
-                break;
-            case DOWNLOAD_FINISHED:
+    }
+
+    private void handleDownloadFinished(Evt e) {
                 downloadFinished = true;
                 final FileObject downloadFO = FileUtil.toFileObject(download);
                 //TODO: check only for zip
@@ -110,14 +112,15 @@ public class DownloadPanel extends javax.swing.JPanel {
                 } else {
                     SwingUtilities.invokeLater(() -> firePropertyChange(PROP_DOWNLOAD_FINISHED, false, true));
                 }
-                break;
-            case DOWNLOAD_PROGRESS:
+    }
+
+    private void handleDownloadProgress(Evt e) {
+        DownloadEvt event = (DownloadEvt) e;
                 SwingUtilities.invokeLater(() -> progressBar.setValue((int) ((double) event.getFraction() / (double) event.getFileSize() * 100)));
-                break;
-            case DOWNLOAD_FAILED:
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(parent, "Download failed", "Attention", JOptionPane.WARNING_MESSAGE));
-                break;
-        }
+    }
+
+    private void handleDownloadFailed(Evt e) {
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(DownloadPanel.this, "Download failed", "Attention", JOptionPane.WARNING_MESSAGE));
     }
     
     
