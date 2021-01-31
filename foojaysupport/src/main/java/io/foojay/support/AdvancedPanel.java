@@ -4,12 +4,10 @@ import io.foojay.api.discoclient.pkg.Distribution;
 import io.foojay.api.discoclient.pkg.Latest;
 import io.foojay.api.discoclient.pkg.PackageType;
 import io.foojay.api.discoclient.pkg.Pkg;
-import static io.foojay.support.FoojayPanel.PROP_DOWNLOAD_SELECTION;
 import java.util.Arrays;
 import java.util.List;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.ListSelectionModel;
 import javax.swing.table.TableModel;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -22,13 +20,6 @@ public abstract class AdvancedPanel extends javax.swing.JPanel {
         initComponents();
 
         distributionComboBox.setRenderer(new DistributionListCellRenderer());
-
-        ListSelectionModel selectionModel = table.getSelectionModel();
-        selectionModel.addListSelectionListener(e -> {
-            boolean selectedSomething = table.getSelectedRow() >= 0;
-            if (selectedSomething)
-                firePropertyChange(PROP_DOWNLOAD_SELECTION, false, true);
-        });
     }
 
     @UIEffect
@@ -205,10 +196,9 @@ public abstract class AdvancedPanel extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JComboBox<Distribution> distributionComboBox;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JCheckBox latestCheckBox;
     private javax.swing.JComboBox<PackageType> packageTypeComboBox;
-    private javax.swing.JTable table;
+    protected javax.swing.JTable table;
     private javax.swing.JComboBox<Integer> versionComboBox;
     // End of variables declaration//GEN-END:variables
 }

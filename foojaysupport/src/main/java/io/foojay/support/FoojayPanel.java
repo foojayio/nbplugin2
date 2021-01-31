@@ -31,17 +31,20 @@ import io.foojay.api.discoclient.pkg.MajorVersion;
 import io.foojay.api.discoclient.pkg.Scope;
 import io.foojay.api.discoclient.pkg.TermOfSupport;
 import static io.foojay.support.SwingWorker2.submit;
+import java.awt.CardLayout;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ChangeEvent;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.openide.util.Exceptions;
 import org.openide.util.Utilities;
 
 @SuppressWarnings("initialization")
-public class FoojayPanel extends AdvancedPanel {
+public class FoojayPanel extends FirstPanel {
     public static final String PROP_DOWNLOAD_SELECTION = "downloadSelection";
 
     private final DiscoClient discoClient;
@@ -52,12 +55,24 @@ public class FoojayPanel extends AdvancedPanel {
         f.init();
         return f;
     }
+    private final QuickPanel quickPanel;
+    private final FooAdvancedPanel advancedPanel;
 
     @SuppressWarnings("initialization")
     @UIEffect
     private FoojayPanel() {
         // Setup disco client
         discoClient = new DiscoClient();
+        quickPanel = new QuickPanel();
+        advancedPanel = new FooAdvancedPanel();
+
+        //please wait message
+        ((CardLayout) getLayout()).first(this);
+        tabs.add("Quick", quickPanel);
+        tabs.add("Advanced", advancedPanel);
+        tabs.addChangeListener((ChangeEvent e) -> {
+            //TODO: tweak validity based on active tab
+        });
     }
 
     @UIEffect
@@ -80,12 +95,27 @@ public class FoojayPanel extends AdvancedPanel {
                     return Map.entry(versionNumbers, lastLtsFeatureRelease);
                 }
         }).then((c) -> {
-                    setVersions(c.getKey(), c.getValue());
+            //hide 'please wait' message, show tabs
+            ((CardLayout) getLayout()).next(FoojayPanel.this);
+
+            advancedPanel.setVersions(c.getKey(), c.getValue());
+            quickPanel.setVersions(c.getKey(), c.getValue());
         }).handle(ex -> {
                     //TODO: bad, show something to user, auto-retry?
                     Exceptions.printStackTrace(ex);
         }).execute();
     }
+
+    class FooAdvancedPanel extends AdvancedPanel {
+
+        FooAdvancedPanel() {
+            ListSelectionModel selectionModel = table.getSelectionModel();
+            selectionModel.addListSelectionListener(e -> {
+                boolean selectedSomething = table.getSelectedRow() >= 0;
+                if (selectedSomething)
+                    firePropertyChange(PROP_DOWNLOAD_SELECTION, false, true);
+            });
+        }
 
     @UIEffect
     @Override
@@ -118,13 +148,14 @@ public class FoojayPanel extends AdvancedPanel {
         FoojayPanel.this.setEnabled(true);
         tableModel.setBundles(bundles);
     }
+    }
 
     @UIEffect
     public @Nullable Pkg getBundleInfo() {
-        return getSelectedPackage();
+        return advancedPanel.getSelectedPackage();
     }
 
-    private OperatingSystem getOperatingSystem() {
+    private static OperatingSystem getOperatingSystem() {
         if (Utilities.isMac())
             return OperatingSystem.MACOS;
         if (Utilities.isWindows())
