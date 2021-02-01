@@ -31,6 +31,9 @@ public class SetupFoojayPlatform extends AbstractWizardPanel<FoojayPanel> {
 
     @Override
     public void storeSettings(WizardDescriptor wiz) {
+        if (!isValid())
+            return;
+
         Pkg bi = getComponent().getBundleInfo();
         if (bi == null)
             throw new IllegalStateException("Null package"); //but really, if isValid is true this should not happen
