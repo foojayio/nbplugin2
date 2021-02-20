@@ -13,7 +13,6 @@ import javax.swing.event.ChangeListener;
 import org.netbeans.api.java.platform.JavaPlatform;
 import org.netbeans.modules.java.j2seplatform.api.J2SEPlatformCreator;
 import org.openide.WizardDescriptor;
-import org.openide.awt.StatusDisplayer;
 import org.openide.filesystems.FileUtil;
 
 @SuppressWarnings("initialization")
@@ -108,8 +107,8 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
         //TODO: Download (in background?)
         String downloadedFolder = (String) wizard.getProperty(FoojayPlatformIt.PROP_DOWNLOAD);
         if (downloadedFolder != null) {
-            String name = state.pkgInfo.getDistribution().getUiString() + " "
-                    + state.pkgInfo.getJavaVersion().toString();
+            String name = state.selection.getJavaPlatformDisplayName();
+            //TODO: only try to register the file if we unarchived it
             return Collections.singleton(J2SEPlatformCreator.createJ2SEPlatform(FileUtil.toFileObject(new File(downloadedFolder)), name));
         } else {
             //TODO: notifcation?

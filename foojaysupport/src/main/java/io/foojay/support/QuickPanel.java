@@ -3,7 +3,9 @@ package io.foojay.support;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
+import javax.annotation.Nonnull;
 import javax.swing.JLabel;
+import org.checkerframework.checker.guieffect.qual.UIEffect;
 
 public class QuickPanel extends javax.swing.JPanel {
 
@@ -93,5 +95,22 @@ public class QuickPanel extends javax.swing.JPanel {
         versions.setMaximum(Collections.max(jdks));
         versions.setLabelTable(labels);
         versions.setValue(value);
+    }
+
+    @UIEffect
+    @Nonnull
+    QuickSelection getSelectedPackage() {
+        return new QuickSelection(versions.getValue(), autoInstallJDK.isSelected());
+    }
+
+    static class QuickSelection {
+
+        final int version;
+        final boolean zip;
+
+        public QuickSelection(int version, boolean zip) {
+            this.version = version;
+            this.zip = zip;
+        }
     }
 }

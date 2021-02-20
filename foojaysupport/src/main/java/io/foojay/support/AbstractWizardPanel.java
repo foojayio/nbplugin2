@@ -33,7 +33,9 @@ public abstract class AbstractWizardPanel<C extends Component> implements Wizard
     @UIEffect
     protected void fireChangeListeners() {
         ChangeEvent ce = new ChangeEvent(this);
-        listeners.forEach(l -> l.stateChanged(ce));
+        for(ChangeListener l : listeners) {
+            l.stateChanged(ce);
+        }
     }
 
     @Override

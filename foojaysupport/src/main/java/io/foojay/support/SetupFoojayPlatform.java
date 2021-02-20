@@ -1,6 +1,5 @@
 package io.foojay.support;
 
-import io.foojay.api.discoclient.pkg.Pkg;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
 import org.openide.WizardDescriptor;
 
@@ -16,13 +15,13 @@ public class SetupFoojayPlatform extends AbstractWizardPanel<FoojayPanel> {
     @UIEffect
     public FoojayPanel createComponent() {
         FoojayPanel component = FoojayPanel.create();
-        component.addPropertyChangeListener(FoojayPanel.PROP_DOWNLOAD_SELECTION, (e) -> fireChangeListeners());
+        component.addPropertyChangeListener(FoojayPanel.PROP_VALIDITY_CHANGED, (e) -> fireChangeListeners());
         return component;
     }
 
     @Override
     public boolean isValid() {
-        return getComponent().getBundleInfo() != null;
+        return getComponent().getSelectedPackage() != null;
     }
 
     @Override
@@ -34,10 +33,10 @@ public class SetupFoojayPlatform extends AbstractWizardPanel<FoojayPanel> {
         if (!isValid())
             return;
 
-        Pkg bi = getComponent().getBundleInfo();
+        PkgSelection bi = getComponent().getSelectedPackage();
         if (bi == null)
             throw new IllegalStateException("Null package"); //but really, if isValid is true this should not happen
-        state.pkgInfo = bi;
+        state.selection = bi;
     }
 
 }
