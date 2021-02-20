@@ -68,12 +68,14 @@ public class DownloadPanel extends javax.swing.JPanel {
     @UIEffect
     public void addNotify() {
         super.addNotify();
-        jdkDescription.setText(state.pkgInfo.getFileName());
+        jdkDescription.setText(state.selection.getFileName());
     }
 
+    @UIEffect
     private void downloadBundle(File destinationFolder) {
+        statusLabel.setText("Preparing...");
         submit(() -> {
-            Pkg bundle = state.pkgInfo;
+            Pkg bundle = state.selection.get(discoClient);
             return discoClient.getPkgInfo(bundle.getEphemeralId(), bundle.getJavaVersion());
         }).then(pkgInfo -> {
             download = new File(destinationFolder, pkgInfo.getFileName());
@@ -86,7 +88,8 @@ public class DownloadPanel extends javax.swing.JPanel {
             //        } catch (InterruptedException | ExecutionException e) {
             //
             //        }
-        }).execute();
+        }).handle(Exceptions::printStackTrace)
+        .execute();
     }
 
     private void handleDownloadStarted(Evt e) {
@@ -110,6 +113,7 @@ public class DownloadPanel extends javax.swing.JPanel {
                         RequestProcessor.getDefault().post(() -> unarchive(io));
                     });
                 } else {
+                    SwingUtilities.invokeLater(() -> statusLabel.setText("Download finished."));
                     SwingUtilities.invokeLater(() -> firePropertyChange(PROP_DOWNLOAD_FINISHED, false, true));
                 }
     }

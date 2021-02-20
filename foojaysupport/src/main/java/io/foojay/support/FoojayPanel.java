@@ -45,7 +45,7 @@ import org.openide.util.Utilities;
 
 @SuppressWarnings("initialization")
 public class FoojayPanel extends FirstPanel {
-    public static final String PROP_DOWNLOAD_SELECTION = "downloadSelection";
+    public static final String PROP_VALIDITY_CHANGED = "panelValidityChanged";
 
     private final DiscoClient discoClient;
 
@@ -71,7 +71,7 @@ public class FoojayPanel extends FirstPanel {
         tabs.add("Quick", quickPanel);
         tabs.add("Advanced", advancedPanel);
         tabs.addChangeListener((ChangeEvent e) -> {
-            //TODO: tweak validity based on active tab
+            FoojayPanel.this.firePropertyChange(PROP_VALIDITY_CHANGED, false, true);
         });
     }
 
@@ -100,6 +100,8 @@ public class FoojayPanel extends FirstPanel {
 
             advancedPanel.setVersions(c.getKey(), c.getValue());
             quickPanel.setVersions(c.getKey(), c.getValue());
+
+            FoojayPanel.this.firePropertyChange(PROP_VALIDITY_CHANGED, false, true);
         }).handle(ex -> {
                     //TODO: bad, show something to user, auto-retry?
                     Exceptions.printStackTrace(ex);
@@ -111,9 +113,7 @@ public class FoojayPanel extends FirstPanel {
         FooAdvancedPanel() {
             ListSelectionModel selectionModel = table.getSelectionModel();
             selectionModel.addListSelectionListener(e -> {
-                boolean selectedSomething = table.getSelectedRow() >= 0;
-                if (selectedSomething)
-                    firePropertyChange(PROP_DOWNLOAD_SELECTION, false, true);
+                FoojayPanel.this.firePropertyChange(PROP_VALIDITY_CHANGED, false, true);
             });
         }
 
@@ -151,11 +151,24 @@ public class FoojayPanel extends FirstPanel {
     }
 
     @UIEffect
-    public @Nullable Pkg getBundleInfo() {
-        return advancedPanel.getSelectedPackage();
+    public @Nullable PkgSelection getSelectedPackage() {
+        if (!tabs.isVisible())
+            return null;
+
+        switch (tabs.getSelectedIndex()) {
+            case 0:
+                return new QuickPkgSelection(quickPanel.getSelectedPackage());
+            case 1:
+                Pkg pkg = advancedPanel.getSelectedPackage();
+                if (pkg == null)
+                    return null;
+                return PkgSelection.of(pkg);
+            default:
+                throw new IllegalStateException();
+        }
     }
 
-    private static OperatingSystem getOperatingSystem() {
+    public static OperatingSystem getOperatingSystem() {
         if (Utilities.isMac())
             return OperatingSystem.MACOS;
         if (Utilities.isWindows())
