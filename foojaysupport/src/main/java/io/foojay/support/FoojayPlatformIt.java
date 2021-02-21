@@ -1,6 +1,7 @@
 package io.foojay.support;
 
 import java.awt.Component;
+import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -107,8 +108,14 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
         //TODO: Download (in background?)
         String downloadedFolder = (String) wizard.getProperty(FoojayPlatformIt.PROP_DOWNLOAD);
         if (downloadedFolder != null) {
+            File f = new File(downloadedFolder);
+            if (!f.isDirectory()) {
+                //open the file manager for the parent folder
+                Desktop.getDesktop().open(f.getParentFile());
+                return Collections.EMPTY_SET;
+            }
+
             String name = state.selection.getJavaPlatformDisplayName();
-            //TODO: only try to register the file if we unarchived it
             return Collections.singleton(J2SEPlatformCreator.createJ2SEPlatform(FileUtil.toFileObject(new File(downloadedFolder)), name));
         } else {
             //TODO: notifcation?
