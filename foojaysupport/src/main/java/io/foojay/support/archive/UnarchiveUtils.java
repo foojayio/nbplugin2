@@ -8,12 +8,14 @@ public class UnarchiveUtils {
 
     private final static Unarchiver[] zipUnarchivers = new Unarchiver[]{
         new CommandLineUnzip(),
+        new CommandLineUntar(),
         new JDKCommonsUnzip()
     };
 
     private static File getSafeOutputDir(File file) {
         File parent = file.getParentFile();
         String name = file.getName();
+        //TODO: Would be nice to also strip .tar.gz which has 2 dots.
         int dot = name.lastIndexOf('.');
         String baseName = dot == -1 ? name : name.substring(0, dot);
 
@@ -23,6 +25,8 @@ public class UnarchiveUtils {
             outputFile = new File(parent, baseName + "_" + counter);
             counter++;
         }
+        //make sure the folder exists, for tar
+        outputFile.mkdirs();
 
         return outputFile;
     }
@@ -34,7 +38,7 @@ public class UnarchiveUtils {
     }
 
     public static void unarchive(File file, File outputDir, InputOutput io) throws IOException, InterruptedException {
-        if (file.getName().toLowerCase().endsWith(".zip"))
+        if (isArchiveFile(file))
             unarchive(file, outputDir, zipUnarchivers, io);
         else
             throw new UnsupportedOperationException("Unknown archive");
@@ -49,6 +53,15 @@ public class UnarchiveUtils {
                 //ignore, the archiver didn't like something, try the next one
             }
         }
+        throw new UnsupportedOperationException("Could not unarchive " + file);
+    }
+
+    public static boolean isArchiveFile(File download) {
+        for (Unarchiver u : zipUnarchivers) {
+            if (u.isSupported(download))
+                    return true;
+        }
+        return false;
     }
 
 }

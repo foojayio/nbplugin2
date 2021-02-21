@@ -51,4 +51,10 @@ public class CommonsUnzip implements Unarchiver {
         }
         return false;
     }
+
+    @Override
+    public boolean isSupported(File input) {
+        return input.getName().toLowerCase().endsWith(".zip");
+    }
+
 }

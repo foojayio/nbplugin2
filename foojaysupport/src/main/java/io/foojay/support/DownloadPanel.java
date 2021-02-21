@@ -17,8 +17,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
-import org.openide.filesystems.FileObject;
-import org.openide.filesystems.FileUtil;
 import org.openide.util.Exceptions;
 import org.openide.util.RequestProcessor;
 import org.openide.windows.IOContainer;
@@ -101,9 +99,7 @@ public class DownloadPanel extends javax.swing.JPanel {
 
     private void handleDownloadFinished(Evt e) {
                 downloadFinished = true;
-                final FileObject downloadFO = FileUtil.toFileObject(download);
-                //TODO: check only for zip
-                if (FileUtil.isArchiveFile(downloadFO)) {
+                if (UnarchiveUtils.isArchiveFile(download)) {
                     SwingUtilities.invokeLater(() -> {
                         statusLabel.setText("Unarchiving...");
                         bottomPanel.add(executionPanel);
