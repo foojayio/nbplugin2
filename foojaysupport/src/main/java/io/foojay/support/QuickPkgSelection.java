@@ -64,10 +64,10 @@ class QuickPkgSelection implements PkgSelection {
             return pkg;
 
         List<Pkg> pkgs;
-            pkgs = d.getPkgs(Distribution.ZULU, version, Latest.OVERALL, FoojayPanel.getOperatingSystem(), LibCType.NONE,
+            pkgs = d.getPkgs(Distribution.ZULU, version, Latest.OVERALL, FoojayPanel.getOperatingSystem(),
                     //TODO: detect current architecture
-                    Architecture.X64, Bitness.NONE,
-                    ArchiveType.NONE, PackageType.JDK, false, true, ReleaseStatus.NONE, TermOfSupport.NONE, Scope.PUBLIC);
+                    Architecture.X64,
+                    ArchiveType.NONE, PackageType.JDK, false);
         Optional<Pkg> found = pkgs.stream().filter(filter).findAny();
 
         if (found.isPresent()) {

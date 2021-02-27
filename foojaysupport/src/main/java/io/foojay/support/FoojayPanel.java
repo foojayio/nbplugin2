@@ -154,14 +154,11 @@ public class FoojayPanel extends FirstPanel {
             return;
         OperatingSystem operatingSystem = getOperatingSystem();
         Architecture architecture = Architecture.NONE;
-        Bitness bitness = Bitness.NONE;
         ArchiveType extension = ArchiveType.NONE;
         Boolean fx = false;
-        ReleaseStatus releaseStatus = ReleaseStatus.NONE;
-        TermOfSupport supportTerm = TermOfSupport.NONE;
         this.setEnabled(false);
         submit(() -> {
-                List<Pkg> bundles = discoClient.getPkgs(distribution, new VersionNumber(featureVersion), latest, operatingSystem, LibCType.NONE, architecture, bitness, extension, bundleType, fx, true, releaseStatus, supportTerm, Scope.PUBLIC);
+                List<Pkg> bundles = discoClient.getPkgs(distribution, new VersionNumber(featureVersion), latest, operatingSystem, architecture, extension, bundleType, fx);
                 return bundles;
         }).then(this::setPackages)
                 //TODO: Show something to user, offer reload, auto-reload in N seconds?
