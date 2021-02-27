@@ -1,9 +1,0 @@
-<nbm>
-    <!-- http://bits.netbeans.org/mavenutilities/nbm-maven-plugin/nbm.html -->
-    <dependencies>
-        <dependency>
-            <id>org.netbeans.modules:org-netbeans-modules-java-j2seplatform</id>
-            <type>impl</type>
-        </dependency>
-    </dependencies>
-</nbm>

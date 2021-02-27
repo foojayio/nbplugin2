@@ -12,9 +12,7 @@ import java.util.Set;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
 import org.netbeans.api.java.platform.JavaPlatform;
-import org.netbeans.modules.java.j2seplatform.api.J2SEPlatformCreator;
 import org.openide.WizardDescriptor;
-import org.openide.filesystems.FileUtil;
 
 @SuppressWarnings("initialization")
 public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIterator<WizardDescriptor> {
@@ -116,7 +114,7 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
             }
 
             String name = state.selection.getJavaPlatformDisplayName();
-            return Collections.singleton(J2SEPlatformCreator.createJ2SEPlatform(FileUtil.toFileObject(new File(downloadedFolder)), name));
+            return Collections.singleton(J2SEPlatformUtils.register(new File(downloadedFolder), name));
         } else {
             //TODO: notifcation?
             return Collections.EMPTY_SET;
