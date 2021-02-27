@@ -1,8 +1,8 @@
 package io.foojay.support;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import javax.swing.SwingWorker;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
@@ -14,14 +14,14 @@ public class SwingWorker2 {
     static class Builder<T> {
 
         private final @NonNull
-        Supplier<T> task;
+        Callable<T> task;
         private @MonotonicNonNull
         Consumer<T> consumer;
         private @Nullable
         Consumer<Exception> errors;
 
         @SuppressWarnings("initialization")
-        public Builder(@NonNull Supplier<T> task) {
+        public Builder(@NonNull Callable<T> task) {
             this.task = task;
         }
 
@@ -40,7 +40,7 @@ public class SwingWorker2 {
             new SwingWorker<T, Void>() {
                 @Override
                 protected T doInBackground() throws Exception {
-                    return task.get();
+                    return task.call();
                 }
 
                 @Override
@@ -57,12 +57,12 @@ public class SwingWorker2 {
 
     }
 
-    public static <T> Builder<T> submit(Supplier<T> bg) {
+    public static <T> Builder<T> submit(Callable<T> bg) {
         return new Builder(bg);
     }
 
     @UIEffect
-    public static <T> void post(Supplier<T> bg, Consumer<T> success, Consumer<Exception> fail) {
+    public static <T> void post(Callable<T> bg, Consumer<T> success, Consumer<Exception> fail) {
         submit(bg).then(success).handle(fail).execute();
     }
 
