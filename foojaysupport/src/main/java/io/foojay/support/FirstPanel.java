@@ -16,16 +16,16 @@ public class FirstPanel extends javax.swing.JPanel {
     private void initComponents() {
 
         javax.swing.JPanel jPanel1 = new javax.swing.JPanel();
-        javax.swing.JLabel jLabel1 = new javax.swing.JLabel();
+        loadingLabel = new javax.swing.JLabel();
         tabs = new javax.swing.JTabbedPane();
 
         setLayout(new java.awt.CardLayout());
 
         jPanel1.setLayout(new javax.swing.BoxLayout(jPanel1, javax.swing.BoxLayout.LINE_AXIS));
 
-        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(FirstPanel.class, "FirstPanel.jLabel1.text")); // NOI18N
-        jPanel1.add(jLabel1);
+        loadingLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        org.openide.awt.Mnemonics.setLocalizedText(loadingLabel, org.openide.util.NbBundle.getMessage(FirstPanel.class, "FirstPanel.loadingLabel.text")); // NOI18N
+        jPanel1.add(loadingLabel);
 
         add(jPanel1, "card3");
         add(tabs, "card2");
@@ -33,6 +33,7 @@ public class FirstPanel extends javax.swing.JPanel {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    protected javax.swing.JLabel loadingLabel;
     protected javax.swing.JTabbedPane tabs;
     // End of variables declaration//GEN-END:variables
 }

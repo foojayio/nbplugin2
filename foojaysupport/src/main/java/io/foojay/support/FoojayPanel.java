@@ -15,7 +15,6 @@
  */
 package io.foojay.support;
 
-import io.foojay.api.discoclient.DiscoClient;
 import io.foojay.api.discoclient.pkg.Architecture;
 import io.foojay.api.discoclient.pkg.Bitness;
 import io.foojay.api.discoclient.pkg.Pkg;
@@ -30,12 +29,15 @@ import io.foojay.api.discoclient.pkg.LibCType;
 import io.foojay.api.discoclient.pkg.MajorVersion;
 import io.foojay.api.discoclient.pkg.Scope;
 import io.foojay.api.discoclient.pkg.TermOfSupport;
+import io.foojay.api.discoclient.util.Helper;
 import static io.foojay.support.SwingWorker2.submit;
 import java.awt.CardLayout;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ChangeEvent;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
@@ -45,9 +47,11 @@ import org.openide.util.Utilities;
 
 @SuppressWarnings("initialization")
 public class FoojayPanel extends FirstPanel {
+    private static final Logger log = Logger.getLogger(FoojayPanel.class.getName());
+
     public static final String PROP_VALIDITY_CHANGED = "panelValidityChanged";
 
-    private final DiscoClient discoClient;
+    private final Client discoClient;
 
     @UIEffect
     public static FoojayPanel create() {
@@ -62,7 +66,7 @@ public class FoojayPanel extends FirstPanel {
     @UIEffect
     private FoojayPanel() {
         // Setup disco client
-        discoClient = new DiscoClient();
+        discoClient = Client.getInstance();
         quickPanel = new QuickPanel();
         advancedPanel = new FooAdvancedPanel();
 
@@ -78,9 +82,15 @@ public class FoojayPanel extends FirstPanel {
     @UIEffect
     private void init() {
         setName("Connect to OpenJDK Discovery Service");
-        
+    }
+
+    @Override
+    @UIEffect
+    public void addNotify() {
+        super.addNotify();
+
+        //loading stuff when ui shown
         submit(() -> {
-                synchronized (discoClient) {
                     // Get release infos
                     MajorVersion lastLtsRelease = discoClient.getLatestLts(false);
                     Integer lastLtsFeatureRelease = lastLtsRelease.getAsInt();
@@ -93,7 +103,6 @@ public class FoojayPanel extends FirstPanel {
                         versionNumbers.add(i);
                     }
                     return Map.entry(versionNumbers, lastLtsFeatureRelease);
-                }
         }).then((c) -> {
             //hide 'please wait' message, show tabs
             ((CardLayout) getLayout()).next(FoojayPanel.this);
@@ -103,8 +112,27 @@ public class FoojayPanel extends FirstPanel {
 
             FoojayPanel.this.firePropertyChange(PROP_VALIDITY_CHANGED, false, true);
         }).handle(ex -> {
-                    //TODO: bad, show something to user, auto-retry?
+            loadingLabel.setText("Could not load list due to an error. Please try again later.");
+
+            long currentTimeMillisStart = System.currentTimeMillis();
+            //check connectivity
+            submit(() -> {
+                String body = Helper.get("http://www.example.com");
+                return !"".equals(body);
+            }).then(isOnline -> {
+                long now = System.currentTimeMillis();
+                //if we are online, but still got an error, let's show it to the user if our ping didn't take forever
+                if (isOnline && (now - currentTimeMillisStart <= 300)) {
                     Exceptions.printStackTrace(ex);
+                } else {
+                    log.log(Level.INFO, "Could not load initial list", ex);
+                }
+            }).handle(ex2 -> {
+                //the ping itself got an error, log everything
+                log.log(Level.INFO, "Could not load initial list", ex);
+                log.log(Level.INFO, "Could not check network connectivity", ex2);
+            })
+            .execute();
         }).execute();
     }
 
@@ -133,10 +161,8 @@ public class FoojayPanel extends FirstPanel {
         TermOfSupport supportTerm = TermOfSupport.NONE;
         this.setEnabled(false);
         submit(() -> {
-            synchronized (discoClient) {
                 List<Pkg> bundles = discoClient.getPkgs(distribution, new VersionNumber(featureVersion), latest, operatingSystem, LibCType.NONE, architecture, bitness, extension, bundleType, fx, true, releaseStatus, supportTerm, Scope.PUBLIC);
                 return bundles;
-            }
         }).then(this::setPackages)
                 //TODO: Show something to user, offer reload, auto-reload in N seconds?
                 .handle(Exceptions::printStackTrace)

@@ -1,6 +1,5 @@
 package io.foojay.support;
 
-import io.foojay.api.discoclient.DiscoClient;
 import io.foojay.api.discoclient.pkg.Architecture;
 import io.foojay.api.discoclient.pkg.ArchiveType;
 import io.foojay.api.discoclient.pkg.Bitness;
@@ -16,6 +15,7 @@ import io.foojay.api.discoclient.pkg.VersionNumber;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 class QuickPkgSelection implements PkgSelection {
@@ -23,7 +23,7 @@ class QuickPkgSelection implements PkgSelection {
     private final VersionNumber version;
     private final Predicate<Pkg> filter;
 
-    private Pkg pkg = null;
+    private @MonotonicNonNull Pkg pkg = null;
 
     public QuickPkgSelection(QuickPanel.QuickSelection quick) {
         this.version = new VersionNumber(quick.version);
@@ -59,17 +59,15 @@ class QuickPkgSelection implements PkgSelection {
     }
 
     @Override
-    public Pkg get(@Nullable DiscoClient d) {
+    public @Nullable Pkg get(@Nullable Client d) {
         if (pkg != null || d == null)
             return pkg;
 
         List<Pkg> pkgs;
-        synchronized (d) {
             pkgs = d.getPkgs(Distribution.ZULU, version, Latest.OVERALL, FoojayPanel.getOperatingSystem(), LibCType.NONE,
                     //TODO: detect current architecture
                     Architecture.X64, Bitness.NONE,
                     ArchiveType.NONE, PackageType.JDK, false, true, ReleaseStatus.NONE, TermOfSupport.NONE, Scope.PUBLIC);
-        }
         Optional<Pkg> found = pkgs.stream().filter(filter).findAny();
 
         if (found.isPresent()) {

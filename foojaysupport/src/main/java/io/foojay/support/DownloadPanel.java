@@ -1,6 +1,5 @@
 package io.foojay.support;
 
-import io.foojay.api.discoclient.DiscoClient;
 import io.foojay.api.discoclient.event.DownloadEvt;
 import io.foojay.api.discoclient.event.Evt;
 import io.foojay.api.discoclient.pkg.Pkg;
@@ -14,11 +13,12 @@ import java.io.IOException;
 import java.util.concurrent.Future;
 import javax.swing.Action;
 import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
+import static javax.swing.SwingUtilities.invokeLater;
+import javax.swing.UIManager;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.openide.WizardDescriptor;
 import org.openide.util.Exceptions;
-import org.openide.util.RequestProcessor;
 import org.openide.windows.IOContainer;
 import org.openide.windows.IOProvider;
 import org.openide.windows.InputOutput;
@@ -30,7 +30,7 @@ public class DownloadPanel extends javax.swing.JPanel {
 
     private boolean downloadFinished;
     private File download;
-    private final DiscoClient discoClient;
+    private final Client discoClient;
     private final WizardState state;
     private IOContainerPanel executionPanel;
 
@@ -45,7 +45,7 @@ public class DownloadPanel extends javax.swing.JPanel {
     @SuppressWarnings("initialization")
     private DownloadPanel(WizardState state) {
         this.state = state;
-        discoClient = new DiscoClient();
+        discoClient = Client.getInstance();
     }
 
     @UIEffect
@@ -55,11 +55,6 @@ public class DownloadPanel extends javax.swing.JPanel {
         initComponents();
 
         this.executionPanel = new IOContainerPanel();
-
-        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_STARTED, this::handleDownloadStarted);
-        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_FINISHED, this::handleDownloadFinished);
-        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_FAILED, this::handleDownloadFailed);
-        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_PROGRESS, this::handleDownloadProgress);
     }
 
     @Override
@@ -67,11 +62,17 @@ public class DownloadPanel extends javax.swing.JPanel {
     public void addNotify() {
         super.addNotify();
         jdkDescription.setText(state.selection.getFileName());
+
+        //this potentially does network calls, do it after component shown
+        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_STARTED, this::handleDownloadStarted);
+        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_FINISHED, this::handleDownloadFinished);
+        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_FAILED, this::handleDownloadFailed);
+        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_PROGRESS, this::handleDownloadProgress);
     }
 
     @UIEffect
     private void downloadBundle(File destinationFolder) {
-        statusLabel.setText("Preparing...");
+        setStatus("Preparing...");
         submit(() -> {
             Pkg bundle = state.selection.get(discoClient);
             return discoClient.getPkgInfo(bundle.getEphemeralId(), bundle.getJavaVersion());
@@ -86,62 +87,94 @@ public class DownloadPanel extends javax.swing.JPanel {
             //        } catch (InterruptedException | ExecutionException e) {
             //
             //        }
-        }).handle(Exceptions::printStackTrace)
+        }).handle(this::handleDownloadFailed)
         .execute();
     }
 
+    @UIEffect
+    private void setStatus(String text) {
+        setStatus(text, null);
+    }
+
+    @UIEffect
+    private void setStatus(String text, @Nullable String uiKey) {
+        statusLabel.setText(text);
+        if (uiKey != null) {
+            statusLabel.setIcon(UIManager.getIcon(uiKey));
+        } else {
+            statusLabel.setIcon(null);
+        }
+        putClientProperty(WizardDescriptor.PROP_INFO_MESSAGE, text);
+    }
+
     private void handleDownloadStarted(Evt e) {
-                SwingUtilities.invokeLater(() -> {
-                    statusLabel.setText("Downloading...");
-                    downloadButton.setEnabled(false);
+                invokeLater(() -> {
+                    setStatus("Downloading...");
                 });
     }
 
     private void handleDownloadFinished(Evt e) {
-                downloadFinished = true;
-                if (UnarchiveUtils.isArchiveFile(download)) {
-                    SwingUtilities.invokeLater(() -> {
-                        statusLabel.setText("Unarchiving...");
-                        bottomPanel.add(executionPanel);
-                        ((CardLayout) bottomPanel.getLayout()).last(bottomPanel);
-                        InputOutput io = IOProvider.getDefault().getIO("Unarchive output", new Action[0], IOContainer.create(executionPanel));
+        downloadFinished = true;
+        if (UnarchiveUtils.isArchiveFile(download)) {
+            invokeLater(() -> {
+                setStatus("Unarchiving...", "Menu.arrowIcon");
 
-                        RequestProcessor.getDefault().post(() -> unarchive(io));
-                    });
-                } else {
-                    SwingUtilities.invokeLater(() -> statusLabel.setText("Download finished."));
-                    SwingUtilities.invokeLater(() -> firePropertyChange(PROP_DOWNLOAD_FINISHED, false, true));
-                }
+                bottomPanel.add(executionPanel);
+                ((CardLayout) bottomPanel.getLayout()).last(bottomPanel);
+                InputOutput io = IOProvider.getDefault().getIO("Unarchive output", new Action[0], IOContainer.create(executionPanel));
+
+                submit(() -> {
+                    return unarchive(io);
+                }).then(file -> {
+                    download = file;
+
+                    notifyDownloadFinished();
+                }).handle(Exceptions::printStackTrace) //this exception is after the file is downloaded, so we still have the package.
+                .execute();
+            });
+        } else {
+            invokeLater(this::notifyDownloadFinished);
+        }
+    }
+
+    @UIEffect
+    private void notifyDownloadFinished() {
+        downloadButton.setEnabled(true); //why not
+
+        setStatus("Finished.");
+        firePropertyChange(PROP_DOWNLOAD_FINISHED, false, true);
     }
 
     private void handleDownloadProgress(Evt e) {
         DownloadEvt event = (DownloadEvt) e;
-                SwingUtilities.invokeLater(() -> progressBar.setValue((int) ((double) event.getFraction() / (double) event.getFileSize() * 100)));
+        int percentage = (int) ((double) event.getFraction() / (double) event.getFileSize() * 100);
+        invokeLater(() -> progressBar.setValue(percentage));
+    }
+
+    private void handleDownloadFailed(@Nullable Exception e) {
+        if (e != null)
+            Exceptions.printStackTrace(e);
+
+        invokeLater(() -> {
+            setStatus("Download failed", "OptionPane.warningIcon");
+            downloadButton.setEnabled(true);
+        });
     }
 
     private void handleDownloadFailed(Evt e) {
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(DownloadPanel.this, "Download failed", "Attention", JOptionPane.WARNING_MESSAGE));
+        handleDownloadFailed((Exception) null);
     }
-    
-    
-    private void unarchive(InputOutput io) {
-        try {
-            File outputFile = UnarchiveUtils.unarchive(download, io);
-            SwingUtilities.invokeLater(() -> statusLabel.setText("Unarchived."));
-            //find bin folder and return the parent of that as the download path
-            File binFolder = JDKCommonsUnzip.findBin(outputFile);
-            if (binFolder != null) {
-                File parent = binFolder.getParentFile();
-                if (parent != null) //but, really, could the parent ever be null?
-                    download = parent;
-            }
-        } catch (IOException | InterruptedException ex) {
-            //TODO: What now? Reveal file?
-            Exceptions.printStackTrace(ex);
-        } catch (UnsupportedOperationException uoe) {
-            Exceptions.printStackTrace(uoe);
+
+    private File unarchive(InputOutput io) throws IOException, InterruptedException {
+        File outputFile = UnarchiveUtils.unarchive(download, io);
+        //find bin folder and return the parent of that as the download path
+        File binFolder = JDKCommonsUnzip.findBin(outputFile);
+        if (binFolder != null) {
+            File parent = binFolder.getParentFile();
+            if (parent != null) //but, really, could the parent ever be null?
+                return parent;
         }
-        SwingUtilities.invokeLater(() -> firePropertyChange(PROP_DOWNLOAD_FINISHED, false, true));
+        return outputFile;
     }
 
     public boolean isDownloadFinished() {
@@ -180,6 +213,11 @@ public class DownloadPanel extends javax.swing.JPanel {
 
         org.openide.awt.Mnemonics.setLocalizedText(downloadButton, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.downloadButton.text")); // NOI18N
         downloadButton.setEnabled(false);
+        downloadButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                downloadButtonActionPerformed(evt);
+            }
+        });
 
         org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.jLabel2.text")); // NOI18N
 
@@ -267,12 +305,16 @@ public class DownloadPanel extends javax.swing.JPanel {
                 String destinationFolder = folder.getAbsolutePath();
                 downloadPathText.setText(destinationFolder);
                 downloadButton.setEnabled(true);
-
-                downloadBundle(folder);
             }
         }
     }//GEN-LAST:event_chooseButtonActionPerformed
 
+    private void downloadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_downloadButtonActionPerformed
+        downloadButton.setEnabled(false);
+        //start from 0, maybe we restarted.
+        progressBar.setValue(0);
+        downloadBundle(new File(downloadPathText.getText()));
+    }//GEN-LAST:event_downloadButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel bottomPanel;
