@@ -1,16 +1,10 @@
 package io.foojay.support;
 
-import io.foojay.api.discoclient.pkg.Architecture;
 import io.foojay.api.discoclient.pkg.ArchiveType;
-import io.foojay.api.discoclient.pkg.Bitness;
 import io.foojay.api.discoclient.pkg.Distribution;
 import io.foojay.api.discoclient.pkg.Latest;
-import io.foojay.api.discoclient.pkg.LibCType;
 import io.foojay.api.discoclient.pkg.PackageType;
 import io.foojay.api.discoclient.pkg.Pkg;
-import io.foojay.api.discoclient.pkg.ReleaseStatus;
-import io.foojay.api.discoclient.pkg.Scope;
-import io.foojay.api.discoclient.pkg.TermOfSupport;
 import io.foojay.api.discoclient.pkg.VersionNumber;
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +24,7 @@ class QuickPkgSelection implements PkgSelection {
         this.filter = quick.zip
                 ? (p) -> p.getArchiveType() == ArchiveType.ZIP
                 : (p) -> {
-                    switch (FoojayPanel.getOperatingSystem()) {
+                    switch (OS.getOperatingSystem()) {
                         case WINDOWS:
                             return ArchiveType.MSI == p.getArchiveType() || ArchiveType.EXE == p.getArchiveType();
                         case MACOS:
@@ -64,9 +58,8 @@ class QuickPkgSelection implements PkgSelection {
             return pkg;
 
         List<Pkg> pkgs;
-            pkgs = d.getPkgs(Distribution.ZULU, version, Latest.OVERALL, FoojayPanel.getOperatingSystem(),
-                    //TODO: detect current architecture
-                    Architecture.X64,
+            pkgs = d.getPkgs(Distribution.ZULU, version, Latest.OVERALL, OS.getOperatingSystem(),
+                    OS.getArchitecture(),
                     ArchiveType.NONE, PackageType.JDK, false);
         Optional<Pkg> found = pkgs.stream().filter(filter).findAny();
 
