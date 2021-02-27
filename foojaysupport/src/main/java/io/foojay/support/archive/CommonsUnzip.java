@@ -25,12 +25,15 @@ public class CommonsUnzip implements Unarchiver {
 
                     continue;
                 if (entry.isDirectory()) {
+                    io.getOut().println("   creating: " + entry.getName());
+
                     if (!f.isDirectory() && !f.mkdirs())
                         throw new IOException("Could not create dirs" + f);
                 } else {
                     File parent = f.getParentFile();
                     if (parent == null || (!parent.isDirectory() && !parent.mkdirs()))
                         throw new IOException("Could not create dirs" + parent);
+                    io.getOut().println("  inflating: " + entry.getName());
                     try ( OutputStream o = Files.newOutputStream(f.toPath())) {
                         IOUtils.copy(i, o);
                     }
