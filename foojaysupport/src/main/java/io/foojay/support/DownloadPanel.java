@@ -1,6 +1,5 @@
 package io.foojay.support;
 
-import io.foojay.api.discoclient.DiscoClient;
 import io.foojay.api.discoclient.event.DownloadEvt;
 import io.foojay.api.discoclient.event.Evt;
 import io.foojay.api.discoclient.pkg.Pkg;
@@ -31,7 +30,7 @@ public class DownloadPanel extends javax.swing.JPanel {
 
     private boolean downloadFinished;
     private File download;
-    private final DiscoClient discoClient;
+    private final Client discoClient;
     private final WizardState state;
     private IOContainerPanel executionPanel;
 
@@ -46,7 +45,7 @@ public class DownloadPanel extends javax.swing.JPanel {
     @SuppressWarnings("initialization")
     private DownloadPanel(WizardState state) {
         this.state = state;
-        discoClient = new DiscoClient();
+        discoClient = Client.getInstance();
     }
 
     @UIEffect
@@ -56,11 +55,6 @@ public class DownloadPanel extends javax.swing.JPanel {
         initComponents();
 
         this.executionPanel = new IOContainerPanel();
-
-        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_STARTED, this::handleDownloadStarted);
-        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_FINISHED, this::handleDownloadFinished);
-        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_FAILED, this::handleDownloadFailed);
-        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_PROGRESS, this::handleDownloadProgress);
     }
 
     @Override
@@ -68,6 +62,12 @@ public class DownloadPanel extends javax.swing.JPanel {
     public void addNotify() {
         super.addNotify();
         jdkDescription.setText(state.selection.getFileName());
+
+        //this potentially does network calls, do it after component shown
+        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_STARTED, this::handleDownloadStarted);
+        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_FINISHED, this::handleDownloadFinished);
+        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_FAILED, this::handleDownloadFailed);
+        discoClient.setOnEvt(DownloadEvt.DOWNLOAD_PROGRESS, this::handleDownloadProgress);
     }
 
     @UIEffect
