@@ -51,9 +51,9 @@ public class Client {
     }
 
     public synchronized List<Pkg> getPkgs(final Distribution distribution, final VersionNumber versionNumber, final Latest latest, final OperatingSystem operatingSystem,
-            final LibCType libcType, final Architecture architecture, final Bitness bitness, final ArchiveType archiveType, final PackageType packageType,
-            final Boolean javafxBundled, final Boolean directlyDownloadable, final ReleaseStatus releaseStatus, final TermOfSupport termOfSupport, final Scope scope) {
-        return getDisco().getPkgs(distribution, versionNumber, latest, operatingSystem, libcType, architecture, bitness, archiveType, packageType, javafxBundled, directlyDownloadable, releaseStatus, termOfSupport, scope);
+            final Architecture architecture, final ArchiveType archiveType, final PackageType packageType,
+            final Boolean javafxBundled) {
+        return getDisco().getPkgs(distribution, versionNumber, latest, operatingSystem, LibCType.NONE, architecture, Bitness.NONE, archiveType, packageType, javafxBundled, /*directlyDownloadable*/ true, ReleaseStatus.NONE, TermOfSupport.NONE, Scope.PUBLIC);
     }
 
     public synchronized PkgInfo getPkgInfo(String ephemeralId, SemVer javaVersion) {

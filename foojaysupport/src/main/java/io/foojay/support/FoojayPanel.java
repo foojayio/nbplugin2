@@ -16,20 +16,16 @@
 package io.foojay.support;
 
 import io.foojay.api.discoclient.pkg.Architecture;
-import io.foojay.api.discoclient.pkg.Bitness;
 import io.foojay.api.discoclient.pkg.Pkg;
 import io.foojay.api.discoclient.pkg.PackageType;
 import io.foojay.api.discoclient.pkg.Distribution;
 import io.foojay.api.discoclient.pkg.OperatingSystem;
-import io.foojay.api.discoclient.pkg.ReleaseStatus;
 import io.foojay.api.discoclient.pkg.VersionNumber;
 import io.foojay.api.discoclient.pkg.ArchiveType;
 import io.foojay.api.discoclient.pkg.Latest;
-import io.foojay.api.discoclient.pkg.LibCType;
 import io.foojay.api.discoclient.pkg.MajorVersion;
-import io.foojay.api.discoclient.pkg.Scope;
-import io.foojay.api.discoclient.pkg.TermOfSupport;
 import io.foojay.api.discoclient.util.Helper;
+import static io.foojay.support.OS.getOperatingSystem;
 import static io.foojay.support.SwingWorker2.submit;
 import java.awt.CardLayout;
 
@@ -43,7 +39,6 @@ import javax.swing.event.ChangeEvent;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.openide.util.Exceptions;
-import org.openide.util.Utilities;
 
 @SuppressWarnings("initialization")
 public class FoojayPanel extends FirstPanel {
@@ -154,14 +149,11 @@ public class FoojayPanel extends FirstPanel {
             return;
         OperatingSystem operatingSystem = getOperatingSystem();
         Architecture architecture = Architecture.NONE;
-        Bitness bitness = Bitness.NONE;
         ArchiveType extension = ArchiveType.NONE;
         Boolean fx = false;
-        ReleaseStatus releaseStatus = ReleaseStatus.NONE;
-        TermOfSupport supportTerm = TermOfSupport.NONE;
         this.setEnabled(false);
         submit(() -> {
-                List<Pkg> bundles = discoClient.getPkgs(distribution, new VersionNumber(featureVersion), latest, operatingSystem, LibCType.NONE, architecture, bitness, extension, bundleType, fx, true, releaseStatus, supportTerm, Scope.PUBLIC);
+                List<Pkg> bundles = discoClient.getPkgs(distribution, new VersionNumber(featureVersion), latest, operatingSystem, architecture, extension, bundleType, fx);
                 return bundles;
         }).then(this::setPackages)
                 //TODO: Show something to user, offer reload, auto-reload in N seconds?
@@ -192,21 +184,6 @@ public class FoojayPanel extends FirstPanel {
             default:
                 throw new IllegalStateException();
         }
-    }
-
-    public static OperatingSystem getOperatingSystem() {
-        if (Utilities.isMac())
-            return OperatingSystem.MACOS;
-        if (Utilities.isWindows())
-            return OperatingSystem.WINDOWS;
-        if (Utilities.isUnix()) {
-            String os = System.getProperty("os.name").toLowerCase();
-            if (os.contains("sunos"))
-                return OperatingSystem.SOLARIS;
-            else
-                return OperatingSystem.LINUX;
-        }
-        return OperatingSystem.NONE;
     }
 
 }

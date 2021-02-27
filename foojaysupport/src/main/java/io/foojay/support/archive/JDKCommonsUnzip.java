@@ -18,11 +18,13 @@ public class JDKCommonsUnzip extends CommonsUnzip {
         File bin = findBin(targetDir);
 
         if (bin != null) {
+            io.getOut().println("Making sure java is executable.");
             for (File exe : MoreObjects.firstNonNull(bin.listFiles(), EMPTY_FILES)) {
                 if (exe.isFile())
                     exe.setExecutable(true);
             }
         }
+        io.getOut().println("Done.");
     }
 
     public static @Nullable File findBin(File outputDir) {
