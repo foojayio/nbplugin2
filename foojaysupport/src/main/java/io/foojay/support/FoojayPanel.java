@@ -80,10 +80,16 @@ public class FoojayPanel extends FirstPanel {
         setName("Connect to OpenJDK Discovery Service");
     }
 
+    private boolean initialLoad = false; //track the async load in addNotify
+
     @Override
     @UIEffect
     public void addNotify() {
         super.addNotify();
+
+        if (initialLoad)
+            return;
+        initialLoad = true;
 
         //loading stuff when ui shown
         submit(() -> {
@@ -110,6 +116,7 @@ public class FoojayPanel extends FirstPanel {
             FoojayPanel.this.firePropertyChange(PROP_VALIDITY_CHANGED, false, true);
         }).handle(ex -> {
             loadingLabel.setText("Could not load list due to an error. Please try again later.");
+            initialLoad = false;
 
             long currentTimeMillisStart = System.currentTimeMillis();
             //check connectivity

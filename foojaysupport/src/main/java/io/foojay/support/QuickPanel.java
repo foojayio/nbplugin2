@@ -104,7 +104,7 @@ public class QuickPanel extends javax.swing.JPanel {
             labels.put(v, label);
         }
         versions.setMaximum(Collections.max(jdks));
-        versions.setMinimum(Collections.min(jdks));
+        versions.setMinimum(8); //TODO: Normally the minimum is 6 but we wouldn't do that, would we?
         versions.setLabelTable(labels);
         versions.setValue(lts.get(0));
     }
