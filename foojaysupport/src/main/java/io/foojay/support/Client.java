@@ -21,7 +21,9 @@ import io.foojay.api.discoclient.pkg.TermOfSupport;
 import io.foojay.api.discoclient.pkg.VersionNumber;
 import io.foojay.api.discoclient.util.PkgInfo;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 public class Client {
 
@@ -40,6 +42,13 @@ public class Client {
     }
 
     private Client() {
+    }
+
+    public synchronized final List<MajorVersion> getAllLTSVersions() {
+        Queue<MajorVersion> majorVersions = getDisco().getAllMajorVersions();
+        return majorVersions.stream()
+                .filter(majorVersion -> TermOfSupport.LTS == majorVersion.getTermOfSupport())
+                .collect(Collectors.toList());
     }
 
     public synchronized MajorVersion getLatestLts(boolean b) {

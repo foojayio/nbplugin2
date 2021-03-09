@@ -57,11 +57,29 @@ public class DownloadPanel extends javax.swing.JPanel {
         this.executionPanel = new IOContainerPanel();
     }
 
+    private boolean initialLoad = false; //track the async load in addNotify
+
     @Override
     @UIEffect
     public void addNotify() {
         super.addNotify();
+        //we do this every time
         jdkDescription.setText(state.selection.getFileName());
+        if (state.selection.get(null) == null) {
+            //OK, we have a quick selection so the file name was not the best, let's try to load it
+            submit(() -> {
+                return state.selection.get(discoClient);
+            }).then(pkg -> {
+                //re-set the name
+                jdkDescription.setText(state.selection.getFileName());
+
+            }).execute(); //NOTE: ignoring errors on purpose...
+        }
+
+        //we do the bellow only once
+        if (initialLoad)
+            return;
+        initialLoad = true;
 
         //this potentially does network calls, do it after component shown
         discoClient.setOnEvt(DownloadEvt.DOWNLOAD_STARTED, this::handleDownloadStarted);
