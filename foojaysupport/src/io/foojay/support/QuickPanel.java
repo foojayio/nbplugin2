@@ -4,9 +4,9 @@ import java.awt.Font;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
-import javax.annotation.Nonnull;
 import javax.swing.JLabel;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 public class QuickPanel extends javax.swing.JPanel {
 
@@ -110,7 +110,7 @@ public class QuickPanel extends javax.swing.JPanel {
     }
 
     @UIEffect
-    @Nonnull
+    @NonNull
     QuickSelection getSelectedPackage() {
         return new QuickSelection(versions.getValue(), autoInstallJDK.isSelected());
     }
