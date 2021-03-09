@@ -1,5 +1,5 @@
 # NetBeans Plugin
-Integration of OpenJDK Discovery Service in Apache NetBeans via the Swing client code in https://github.com/foojay2020/nbplugin.
+Integration of Universal OpenJDK Discovery API in Apache NetBeans.
 
 ![pic1](https://github.com/foojay2020/nbplugin2/blob/main/pics/pic1.png)
 ![pic2](https://github.com/foojay2020/nbplugin2/blob/main/pics/pic2.png)
