@@ -28,10 +28,10 @@ import io.foojay.api.discoclient.util.Helper;
 import static io.foojay.support.OS.getOperatingSystem;
 import static io.foojay.support.SwingWorker2.submit;
 import java.awt.CardLayout;
+import java.util.AbstractMap;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -105,7 +105,7 @@ public class FoojayPanel extends FirstPanel {
                     for (Integer i = 6; i <= nextFeatureRelease; i++) {
                         versionNumbers.add(i);
                     }
-                    return Map.entry(versionNumbers, majorVersions);
+                    return new AbstractMap.SimpleEntry<>(versionNumbers, majorVersions);
         }).then((c) -> {
             //hide 'please wait' message, show tabs
             ((CardLayout) getLayout()).next(FoojayPanel.this);

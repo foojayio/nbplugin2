@@ -1,4 +1,7 @@
 Manifest-Version: 1.0
+AutoUpdate-Show-In-Client: true
+OpenIDE-Module: io.foojay.disco
 OpenIDE-Module-Layer: io/foojay/support/layer.xml
 OpenIDE-Module-Localizing-Bundle: io/foojay/support/Bundle.properties
+OpenIDE-Module-Specification-Version: 1.0
 

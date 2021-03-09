@@ -38,7 +38,7 @@ public abstract class AdvancedPanel extends javax.swing.JPanel {
 
     private TableModel createTableModel() {
         if (tableModel == null) {
-            tableModel = new BundleTableModel(List.of());
+            tableModel = new BundleTableModel(new ArrayList<>());
         }
 
         return tableModel;
@@ -51,7 +51,8 @@ public abstract class AdvancedPanel extends javax.swing.JPanel {
         List<Integer> reversedVersions = new ArrayList<>(versions);
         Collections.sort(reversedVersions, Collections.reverseOrder());
         ((VersionListCellRenderer) versionComboBox.getRenderer()).setLTS(lts);
-        ((DefaultComboBoxModel<Integer>) versionComboBox.getModel()).addAll(reversedVersions);
+        DefaultComboBoxModel versionModel = (DefaultComboBoxModel<Integer>) versionComboBox.getModel();
+        reversedVersions.forEach(v -> versionModel.addElement(v));
         versionComboBox.setSelectedItem(lts.get(0));
     }
 
