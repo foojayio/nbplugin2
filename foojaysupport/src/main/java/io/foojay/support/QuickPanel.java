@@ -36,6 +36,7 @@ public class QuickPanel extends javax.swing.JPanel {
         versions.setPaintTicks(true);
         versions.setSnapToTicks(true);
         versions.setValue(15);
+        versions.setInverted(true);
 
         buttonGroup1.add(autoInstallJDK);
         autoInstallJDK.setSelected(true);

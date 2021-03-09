@@ -77,6 +77,7 @@
         <Property name="paintTicks" type="boolean" value="true"/>
         <Property name="snapToTicks" type="boolean" value="true"/>
         <Property name="value" type="int" value="15"/>
+        <Property name="inverted" type="boolean" value="true"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JRadioButton" name="autoInstallJDK">
