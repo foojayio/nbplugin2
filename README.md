@@ -1,5 +1,4 @@
-# NetBeans Plugin
-Integration of Universal OpenJDK Discovery API in Apache NetBeans.
+## Integration of Universal OpenJDK Discovery API in Apache NetBeans.
 
 ![pic1](https://github.com/foojay2020/nbplugin2/blob/main/pics/pic1.png)
 ![pic2](https://github.com/foojay2020/nbplugin2/blob/main/pics/pic2.png)
