@@ -1,5 +1,6 @@
 package io.foojay.support;
 
+import java.awt.Font;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
@@ -88,14 +89,24 @@ public class QuickPanel extends javax.swing.JPanel {
     private javax.swing.JSlider versions;
     // End of variables declaration//GEN-END:variables
 
-    void setVersions(List<Integer> jdks, Integer value) {
+    void setVersions(List<Integer> jdks, List<Integer> lts) {
         Hashtable<Integer, JLabel> labels = new Hashtable<>();
         for(Integer v : jdks) {
-            labels.put(v, new JLabel(String.valueOf(v)));
+            boolean isLTS = lts.contains(v);
+            String name = isLTS ? (v + " (LTS)") : String.valueOf(v);
+            JLabel label = new JLabel(name);
+            if (isLTS) {
+                //these decorations do nothing on macOS...
+                Font font = label.getFont();
+                label.setFont(font.deriveFont(font.getStyle() | Font.BOLD));
+                label.setToolTipText("Long Term Support");
+            }
+            labels.put(v, label);
         }
         versions.setMaximum(Collections.max(jdks));
+        versions.setMinimum(Collections.min(jdks));
         versions.setLabelTable(labels);
-        versions.setValue(value);
+        versions.setValue(lts.get(0));
     }
 
     @UIEffect

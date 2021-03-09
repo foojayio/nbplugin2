@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ChangeEvent;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
@@ -87,8 +88,9 @@ public class FoojayPanel extends FirstPanel {
         //loading stuff when ui shown
         submit(() -> {
                     // Get release infos
-                    MajorVersion lastLtsRelease = discoClient.getLatestLts(false);
-                    Integer lastLtsFeatureRelease = lastLtsRelease.getAsInt();
+                    List<Integer> majorVersions = discoClient.getAllLTSVersions().stream()
+                            .map(v -> v.getAsInt())
+                            .collect(Collectors.toList());
 
                     MajorVersion nextRelease = discoClient.getLatestSts(false);
                     Integer nextFeatureRelease = nextRelease.getAsInt();
@@ -97,7 +99,7 @@ public class FoojayPanel extends FirstPanel {
                     for (Integer i = 6; i <= nextFeatureRelease; i++) {
                         versionNumbers.add(i);
                     }
-                    return Map.entry(versionNumbers, lastLtsFeatureRelease);
+                    return Map.entry(versionNumbers, majorVersions);
         }).then((c) -> {
             //hide 'please wait' message, show tabs
             ((CardLayout) getLayout()).next(FoojayPanel.this);
