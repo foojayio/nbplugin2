@@ -4,10 +4,12 @@ import io.foojay.api.discoclient.pkg.Distribution;
 import io.foojay.api.discoclient.pkg.Latest;
 import io.foojay.api.discoclient.pkg.PackageType;
 import io.foojay.api.discoclient.pkg.Pkg;
+import io.foojay.api.discoclient.pkg.TermOfSupport;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.table.TableModel;
@@ -47,13 +49,13 @@ public abstract class AdvancedPanel extends javax.swing.JPanel {
     @UIEffect
     protected abstract void updateData(Distribution distribution, Integer featureVersion, Latest latest, PackageType bundleType);
     
-    protected void setVersions(List<Integer> versions,List<Integer> lts) {
+    protected void setVersions(List<Integer> versions, Map<Integer, TermOfSupport> lts) {
         List<Integer> reversedVersions = new ArrayList<>(versions);
         Collections.sort(reversedVersions, Collections.reverseOrder());
         ((VersionListCellRenderer) versionComboBox.getRenderer()).setLTS(lts);
         DefaultComboBoxModel versionModel = (DefaultComboBoxModel<Integer>) versionComboBox.getModel();
         reversedVersions.forEach(v -> versionModel.addElement(v));
-        versionComboBox.setSelectedItem(lts.get(0));
+        versionModel.setSelectedItem(LTSes.latest(lts));
     }
 
     private ComboBoxModel<Integer> createVersionComboboxModel() {

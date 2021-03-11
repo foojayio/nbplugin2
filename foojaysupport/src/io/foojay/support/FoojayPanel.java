@@ -15,6 +15,7 @@
  */
 package io.foojay.support;
 
+import com.google.common.collect.Maps;
 import io.foojay.api.discoclient.pkg.Architecture;
 import io.foojay.api.discoclient.pkg.Pkg;
 import io.foojay.api.discoclient.pkg.PackageType;
@@ -24,6 +25,7 @@ import io.foojay.api.discoclient.pkg.VersionNumber;
 import io.foojay.api.discoclient.pkg.ArchiveType;
 import io.foojay.api.discoclient.pkg.Latest;
 import io.foojay.api.discoclient.pkg.MajorVersion;
+import io.foojay.api.discoclient.pkg.TermOfSupport;
 import io.foojay.api.discoclient.util.Helper;
 import static io.foojay.support.OS.getOperatingSystem;
 import static io.foojay.support.SwingWorker2.submit;
@@ -31,7 +33,9 @@ import java.awt.CardLayout;
 import java.util.AbstractMap;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -94,18 +98,18 @@ public class FoojayPanel extends FirstPanel {
         //loading stuff when ui shown
         submit(() -> {
                     // Get release infos
-                    List<Integer> majorVersions = discoClient.getAllLTSVersions().stream()
-                            .map(v -> v.getAsInt())
-                            .collect(Collectors.toList());
+                    Map<Integer, TermOfSupport> majorVersions = discoClient.getAllLTSVersions().stream()
+                            .collect(Collectors.toMap(MajorVersion::getAsInt, MajorVersion::getTermOfSupport));
 
-                    MajorVersion nextRelease = discoClient.getLatestSts(false);
+                    MajorVersion nextRelease = discoClient.getLatestSts(true);
                     Integer nextFeatureRelease = nextRelease.getAsInt();
 
                     List<Integer> versionNumbers = new ArrayList<>();
                     for (Integer i = 6; i <= nextFeatureRelease; i++) {
                         versionNumbers.add(i);
                     }
-                    return new AbstractMap.SimpleEntry<>(versionNumbers, majorVersions);
+                    Map<Integer, TermOfSupport> versionNumberSupport = new HashMap<>(Maps.filterKeys(majorVersions, v -> versionNumbers.contains(v)));
+                    return new AbstractMap.SimpleEntry<>(versionNumbers, versionNumberSupport);
         }).then((c) -> {
             //hide 'please wait' message, show tabs
             ((CardLayout) getLayout()).next(FoojayPanel.this);

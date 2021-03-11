@@ -1,9 +1,11 @@
 package io.foojay.support;
 
+import io.foojay.api.discoclient.pkg.TermOfSupport;
 import java.awt.Font;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import javax.swing.JLabel;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -89,11 +91,11 @@ public class QuickPanel extends javax.swing.JPanel {
     private javax.swing.JSlider versions;
     // End of variables declaration//GEN-END:variables
 
-    void setVersions(List<Integer> jdks, List<Integer> lts) {
+    void setVersions(List<Integer> jdks, Map<Integer, TermOfSupport> lts) {
         Hashtable<Integer, JLabel> labels = new Hashtable<>();
         for(Integer v : jdks) {
-            boolean isLTS = lts.contains(v);
-            String name = isLTS ? (v + " (LTS)") : String.valueOf(v);
+            boolean isLTS = lts.containsKey(v);
+            String name = isLTS ? LTSes.text(v, lts.get(v)) : String.valueOf(v);
             JLabel label = new JLabel(name);
             if (isLTS) {
                 //these decorations do nothing on macOS...
@@ -106,7 +108,7 @@ public class QuickPanel extends javax.swing.JPanel {
         versions.setMaximum(Collections.max(jdks));
         versions.setMinimum(8); //TODO: Normally the minimum is 6 but we wouldn't do that, would we?
         versions.setLabelTable(labels);
-        versions.setValue(lts.get(0));
+        versions.setValue(LTSes.latest(lts));
     }
 
     @UIEffect
