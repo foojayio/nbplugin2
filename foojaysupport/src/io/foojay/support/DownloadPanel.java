@@ -16,6 +16,7 @@ import javax.swing.JFileChooser;
 import static javax.swing.SwingUtilities.invokeLater;
 import javax.swing.UIManager;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.openide.WizardDescriptor;
 import org.openide.util.Exceptions;
@@ -55,6 +56,8 @@ public class DownloadPanel extends javax.swing.JPanel {
         initComponents();
 
         this.executionPanel = new IOContainerPanel();
+        if (!downloadPathText.getText().isEmpty())
+            downloadButton.setEnabled(true);
     }
 
     private boolean initialLoad = false; //track the async load in addNotify
@@ -86,6 +89,14 @@ public class DownloadPanel extends javax.swing.JPanel {
         discoClient.setOnEvt(DownloadEvt.DOWNLOAD_FINISHED, this::handleDownloadFinished);
         discoClient.setOnEvt(DownloadEvt.DOWNLOAD_FAILED, this::handleDownloadFailed);
         discoClient.setOnEvt(DownloadEvt.DOWNLOAD_PROGRESS, this::handleDownloadProgress);
+    }
+
+    @NonNull
+    public String getDefaultDownloadFolder() {
+        File f = OS.getDefaultDownloadFolder();
+        if (f == null)
+            return "";
+        return f.getAbsolutePath();
     }
 
     @UIEffect
@@ -240,7 +251,7 @@ public class DownloadPanel extends javax.swing.JPanel {
         org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.jLabel2.text")); // NOI18N
 
         downloadPathText.setEditable(false);
-        downloadPathText.setText(org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.downloadPathText.text")); // NOI18N
+        downloadPathText.setText(getDefaultDownloadFolder());
 
         org.openide.awt.Mnemonics.setLocalizedText(chooseButton, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.chooseButton.text")); // NOI18N
         chooseButton.addActionListener(new java.awt.event.ActionListener() {
