@@ -2,12 +2,13 @@ package io.foojay.support;
 
 import io.foojay.api.discoclient.pkg.TermOfSupport;
 import java.awt.Font;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import javax.swing.JLabel;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
 public class QuickPanel extends javax.swing.JPanel {
@@ -91,30 +92,73 @@ public class QuickPanel extends javax.swing.JPanel {
     private javax.swing.JSlider versions;
     // End of variables declaration//GEN-END:variables
 
-    void setVersions(List<Integer> jdks, Map<Integer, TermOfSupport> lts) {
-        Hashtable<Integer, JLabel> labels = new Hashtable<>();
-        for(Integer v : jdks) {
-            boolean isLTS = lts.containsKey(v);
-            String name = isLTS ? LTSes.text(v, lts.get(v)) : String.valueOf(v);
-            JLabel label = new JLabel(name);
-            if (isLTS) {
-                //these decorations do nothing on macOS...
-                Font font = label.getFont();
-                label.setFont(font.deriveFont(font.getStyle() | Font.BOLD));
-                label.setToolTipText("Long Term Support");
-            }
-            labels.put(v, label);
+    //The `versions` slider holds *the index* in versionsJDKs and
+    //this model holds the actual JDKs and the mapping between
+    static class VersionsModel {
+
+        private final List<Integer> versionJDKs;
+        private final Map<Integer, TermOfSupport> lts;
+
+        private VersionsModel(List<Integer> jdks, Map<Integer, TermOfSupport> lts) {
+            this.versionJDKs = new ArrayList<>(jdks);
+            //quick panel shows only maintained JDKs
+            versionJDKs.removeIf(v -> !lts.containsKey(v));
+            versionJDKs.removeIf(v -> v <= 6); //TODO: Normally the minimum is 6 but we wouldn't do that, would we?
+            this.lts = lts;
         }
-        versions.setMaximum(Collections.max(jdks));
-        versions.setMinimum(8); //TODO: Normally the minimum is 6 but we wouldn't do that, would we?
-        versions.setLabelTable(labels);
-        versions.setValue(LTSes.latest(lts));
+
+        public int getMinimum() {
+            return 0;
+        }
+
+        public int getMaximum() {
+            return versionJDKs.size() - 1;
+        }
+
+        public int getDefaultValue() {
+            return versionJDKs.indexOf(LTSes.latest(lts));
+        }
+
+        @UIEffect
+        @NonNull
+        public Hashtable<Integer, JLabel> createLabels() {
+            Hashtable<Integer, JLabel> labels = new Hashtable<>();
+            for (Integer v : versionJDKs) {
+                boolean isLTS = lts.containsKey(v);
+                String name = isLTS ? LTSes.text(v, lts.get(v)) : String.valueOf(v);
+                JLabel label = new JLabel(name);
+                if (isLTS) {
+                    //these decorations do nothing on macOS...
+                    Font font = label.getFont();
+                    label.setFont(font.deriveFont(font.getStyle() | Font.BOLD));
+                    label.setToolTipText("Long Term Support");
+                }
+                labels.put(versionJDKs.indexOf(v), label);
+            }
+            return labels;
+        }
+
+        private int getJDK(int index) {
+            return versionJDKs.get(index);
+        }
+
+    }
+
+    @MonotonicNonNull
+    private VersionsModel versionsModel;
+
+    void setVersions(List<Integer> jdks, Map<Integer, TermOfSupport> lts) {
+        versionsModel = new VersionsModel(jdks, lts);
+        versions.setMaximum(versionsModel.getMaximum());
+        versions.setMinimum(versionsModel.getMinimum());
+        versions.setLabelTable(versionsModel.createLabels());
+        versions.setValue(versionsModel.getDefaultValue());
     }
 
     @UIEffect
     @NonNull
     QuickSelection getSelectedPackage() {
-        return new QuickSelection(versions.getValue(), autoInstallJDK.isSelected());
+        return new QuickSelection(versionsModel.getJDK(versions.getValue()), autoInstallJDK.isSelected());
     }
 
     static class QuickSelection {
