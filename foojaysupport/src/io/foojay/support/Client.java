@@ -45,9 +45,10 @@ public class Client {
     }
 
     public synchronized final List<MajorVersion> getAllLTSVersions() {
-        Queue<MajorVersion> majorVersions = getDisco().getAllMajorVersions();
+        Queue<MajorVersion> majorVersions = getDisco().getAllMajorVersions(true);
         return majorVersions.stream()
-                .filter(majorVersion -> TermOfSupport.LTS == majorVersion.getTermOfSupport())
+                .filter(majorVersion -> TermOfSupport.LTS == majorVersion.getTermOfSupport() ||
+                        TermOfSupport.MTS == majorVersion.getTermOfSupport())
                 .collect(Collectors.toList());
     }
 
