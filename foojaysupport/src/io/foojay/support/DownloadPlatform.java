@@ -37,4 +37,9 @@ public class DownloadPlatform extends AbstractWizardPanel<DownloadPanel> {
             wiz.putProperty(FoojayPlatformIt.PROP_DOWNLOAD, file.getAbsolutePath());
     }
 
+    @Override
+    public void readSettings(WizardDescriptor wiz) {
+        String folder = (String) wiz.getProperty(FoojayPlatformIt.PROP_DOWNLOAD_FOLDER);
+        getComponent().setDownloadFolder(folder);
+    }
 }
