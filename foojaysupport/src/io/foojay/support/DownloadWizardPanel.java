@@ -4,11 +4,11 @@ import java.io.File;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
 import org.openide.WizardDescriptor;
 
-public class DownloadPlatform extends AbstractWizardPanel<DownloadPanel> {
+public class DownloadWizardPanel extends AbstractWizardPanel<DownloadPanel> {
 
     private final WizardState state;
 
-    DownloadPlatform(WizardState state) {
+    DownloadWizardPanel(WizardState state) {
         this.state = state;
     }
 

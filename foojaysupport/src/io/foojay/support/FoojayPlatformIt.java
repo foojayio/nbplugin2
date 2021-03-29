@@ -34,9 +34,9 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
     private List<WizardDescriptor.Panel<WizardDescriptor>> getPanels() {
         if (panels == null) {
             panels = new ArrayList<>();
-            panels.add(new SetupFoojayPlatform(state));
+            panels.add(new SelectPackageWizardPanel(state));
             panels.add(new BrowseWizardPanel(state));
-            panels.add(new DownloadPlatform(state));
+            panels.add(new DownloadWizardPanel(state));
             String[] steps = new String[panels.size()];
             for (int i = 0; i < panels.size(); i++) {
                 Component c = panels.get(i).getComponent();

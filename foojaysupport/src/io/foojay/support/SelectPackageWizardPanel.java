@@ -3,19 +3,19 @@ package io.foojay.support;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
 import org.openide.WizardDescriptor;
 
-public class SetupFoojayPlatform extends AbstractWizardPanel<FoojayPanel> {
+public class SelectPackageWizardPanel extends AbstractWizardPanel<SelectPackagePanel> {
 
     private final WizardState state;
 
-    SetupFoojayPlatform(WizardState state) {
+    SelectPackageWizardPanel(WizardState state) {
         this.state = state;
     }
 
     @Override
     @UIEffect
-    public FoojayPanel createComponent() {
-        FoojayPanel component = FoojayPanel.create();
-        component.addPropertyChangeListener(FoojayPanel.PROP_VALIDITY_CHANGED, (e) -> fireChangeListeners());
+    public SelectPackagePanel createComponent() {
+        SelectPackagePanel component = SelectPackagePanel.create();
+        component.addPropertyChangeListener(SelectPackagePanel.PROP_VALIDITY_CHANGED, (e) -> fireChangeListeners());
         return component;
     }
 

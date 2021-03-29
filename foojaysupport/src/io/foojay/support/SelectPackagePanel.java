@@ -46,16 +46,16 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.openide.util.Exceptions;
 
 @SuppressWarnings("initialization")
-public class FoojayPanel extends FirstPanel {
-    private static final Logger log = Logger.getLogger(FoojayPanel.class.getName());
+public class SelectPackagePanel extends FirstPanel {
+    private static final Logger log = Logger.getLogger(SelectPackagePanel.class.getName());
 
     public static final String PROP_VALIDITY_CHANGED = "panelValidityChanged";
 
     private final Client discoClient;
 
     @UIEffect
-    public static FoojayPanel create() {
-        FoojayPanel f = new FoojayPanel();
+    public static SelectPackagePanel create() {
+        SelectPackagePanel f = new SelectPackagePanel();
         f.init();
         return f;
     }
@@ -64,7 +64,7 @@ public class FoojayPanel extends FirstPanel {
 
     @SuppressWarnings("initialization")
     @UIEffect
-    private FoojayPanel() {
+    private SelectPackagePanel() {
         // Setup disco client
         discoClient = Client.getInstance();
         quickPanel = new QuickPanel();
@@ -75,7 +75,7 @@ public class FoojayPanel extends FirstPanel {
         tabs.add("Quick", quickPanel);
         tabs.add("Advanced", advancedPanel);
         tabs.addChangeListener((ChangeEvent e) -> {
-            FoojayPanel.this.firePropertyChange(PROP_VALIDITY_CHANGED, false, true);
+            SelectPackagePanel.this.firePropertyChange(PROP_VALIDITY_CHANGED, false, true);
         });
     }
 
@@ -112,12 +112,12 @@ public class FoojayPanel extends FirstPanel {
                     return new AbstractMap.SimpleEntry<>(versionNumbers, versionNumberSupport);
         }).then((c) -> {
             //hide 'please wait' message, show tabs
-            ((CardLayout) getLayout()).next(FoojayPanel.this);
+            ((CardLayout) getLayout()).next(SelectPackagePanel.this);
 
             advancedPanel.setVersions(c.getKey(), c.getValue());
             quickPanel.setVersions(c.getKey(), c.getValue());
 
-            FoojayPanel.this.firePropertyChange(PROP_VALIDITY_CHANGED, false, true);
+            SelectPackagePanel.this.firePropertyChange(PROP_VALIDITY_CHANGED, false, true);
         }).handle(ex -> {
             loadingLabel.setText("Could not load list due to an error. Please try again later.");
             initialLoad = false;
@@ -149,7 +149,7 @@ public class FoojayPanel extends FirstPanel {
         FooAdvancedPanel() {
             ListSelectionModel selectionModel = table.getSelectionModel();
             selectionModel.addListSelectionListener(e -> {
-                FoojayPanel.this.firePropertyChange(PROP_VALIDITY_CHANGED, false, true);
+                SelectPackagePanel.this.firePropertyChange(PROP_VALIDITY_CHANGED, false, true);
             });
         }
 
@@ -176,7 +176,7 @@ public class FoojayPanel extends FirstPanel {
 
     @UIEffect
     private void setPackages(List<Pkg> bundles) {
-        FoojayPanel.this.setEnabled(true);
+        SelectPackagePanel.this.setEnabled(true);
         tableModel.setBundles(bundles);
     }
     }
