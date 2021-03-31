@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import javax.swing.JComponent;
+import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import org.checkerframework.checker.guieffect.qual.UIEffect;
 import org.netbeans.api.java.platform.JavaPlatform;
 import org.openide.WizardDescriptor;
 
@@ -18,6 +20,7 @@ import org.openide.WizardDescriptor;
 public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIterator<WizardDescriptor> {
 
     public static final String PROP_DOWNLOAD = "download"; //NOI18N
+    public static final String PROP_DOWNLOAD_FOLDER = "downloadFolder"; //NOI18N
     
     private int index;
 
@@ -25,13 +28,15 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
     private WizardDescriptor wizard;
     private WizardState state = new WizardState();
     private String[] names;
+    private final List<ChangeListener> listeners = new ArrayList<>();
 
     @SuppressWarnings("call.invalid.ui") //TODO: Remove this and fix the underlying warning
     private List<WizardDescriptor.Panel<WizardDescriptor>> getPanels() {
         if (panels == null) {
             panels = new ArrayList<>();
-            panels.add(new SetupFoojayPlatform(state));
-            panels.add(new DownloadPlatform(state));
+            panels.add(new SelectPackageWizardPanel(state));
+            panels.add(new BrowseWizardPanel(state));
+            panels.add(new DownloadWizardPanel(state));
             String[] steps = new String[panels.size()];
             for (int i = 0; i < panels.size(); i++) {
                 Component c = panels.get(i).getComponent();
@@ -67,7 +72,9 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
 
     @Override
     public boolean hasPrevious() {
-        return index > 0;
+        //can't go back from the download panel
+        //TODO: this API does not work since TemplateWizardIterImpl.hasPrevious never delegates
+        return index == 1;
     }
 
     @Override
@@ -89,10 +96,20 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
     // If nothing unusual changes in the middle of the wizard, simply:
     @Override
     public void addChangeListener(ChangeListener l) {
+        listeners.add(l);
     }
 
     @Override
     public void removeChangeListener(ChangeListener l) {
+        listeners.remove(l);
+    }
+
+    @UIEffect
+    protected void fireChangeListeners() {
+        ChangeEvent ce = new ChangeEvent(this);
+        for(ChangeListener l : listeners) {
+            l.stateChanged(ce);
+        }
     }
 
     @Override
@@ -123,6 +140,7 @@ public final class FoojayPlatformIt implements WizardDescriptor.InstantiatingIte
     
     @Override
     public void uninitialize(WizardDescriptor wd) {
+        //TODO: cancel download here?
     }
 
 }

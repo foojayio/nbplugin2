@@ -12,7 +12,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Future;
 import javax.swing.Action;
-import javax.swing.JFileChooser;
 import static javax.swing.SwingUtilities.invokeLater;
 import javax.swing.UIManager;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
@@ -34,6 +33,7 @@ public class DownloadPanel extends javax.swing.JPanel {
     private final Client discoClient;
     private final WizardState state;
     private IOContainerPanel executionPanel;
+    private String downloadFolder;
 
     @UIEffect
     public static DownloadPanel create(WizardState state) {
@@ -56,8 +56,6 @@ public class DownloadPanel extends javax.swing.JPanel {
         initComponents();
 
         this.executionPanel = new IOContainerPanel();
-        if (!downloadPathText.getText().isEmpty())
-            downloadButton.setEnabled(true);
     }
 
     private boolean initialLoad = false; //track the async load in addNotify
@@ -66,19 +64,6 @@ public class DownloadPanel extends javax.swing.JPanel {
     @UIEffect
     public void addNotify() {
         super.addNotify();
-        //we do this every time
-        jdkDescription.setText(state.selection.getFileName());
-        if (state.selection.get(null) == null) {
-            //OK, we have a quick selection so the file name was not the best, let's try to load it
-            submit(() -> {
-                return state.selection.get(discoClient);
-            }).then(pkg -> {
-                //re-set the name
-                jdkDescription.setText(state.selection.getFileName());
-
-            }).execute(); //NOTE: ignoring errors on purpose...
-        }
-
         //we do the bellow only once
         if (initialLoad)
             return;
@@ -89,6 +74,9 @@ public class DownloadPanel extends javax.swing.JPanel {
         discoClient.setOnEvt(DownloadEvt.DOWNLOAD_FINISHED, this::handleDownloadFinished);
         discoClient.setOnEvt(DownloadEvt.DOWNLOAD_FAILED, this::handleDownloadFailed);
         discoClient.setOnEvt(DownloadEvt.DOWNLOAD_PROGRESS, this::handleDownloadProgress);
+
+        //immediatelly start download
+        downloadButtonActionPerformed();
     }
 
     @NonNull
@@ -168,8 +156,6 @@ public class DownloadPanel extends javax.swing.JPanel {
 
     @UIEffect
     private void notifyDownloadFinished() {
-        downloadButton.setEnabled(true); //why not
-
         setStatus("Finished.");
         firePropertyChange(PROP_DOWNLOAD_FINISHED, false, true);
     }
@@ -186,7 +172,7 @@ public class DownloadPanel extends javax.swing.JPanel {
 
         invokeLater(() -> {
             setStatus("Download failed", "OptionPane.warningIcon");
-            downloadButton.setEnabled(true);
+            //TODO: Allow back button somehow?
         });
     }
 
@@ -225,40 +211,10 @@ public class DownloadPanel extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jLabel1 = new javax.swing.JLabel();
-        jdkDescription = new javax.swing.JLabel();
-        downloadButton = new javax.swing.JButton();
-        jLabel2 = new javax.swing.JLabel();
-        downloadPathText = new javax.swing.JTextField();
-        chooseButton = new javax.swing.JToggleButton();
         statusLabel = new javax.swing.JLabel();
         bottomPanel = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
         progressBar = new javax.swing.JProgressBar();
-
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.jLabel1.text")); // NOI18N
-
-        org.openide.awt.Mnemonics.setLocalizedText(jdkDescription, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.jdkDescription.text")); // NOI18N
-
-        org.openide.awt.Mnemonics.setLocalizedText(downloadButton, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.downloadButton.text")); // NOI18N
-        downloadButton.setEnabled(false);
-        downloadButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                downloadButtonActionPerformed(evt);
-            }
-        });
-
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.jLabel2.text")); // NOI18N
-
-        downloadPathText.setEditable(false);
-        downloadPathText.setText(getDefaultDownloadFolder());
-
-        org.openide.awt.Mnemonics.setLocalizedText(chooseButton, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.chooseButton.text")); // NOI18N
-        chooseButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                chooseButtonActionPerformed(evt);
-            }
-        });
 
         statusLabel.setFont(statusLabel.getFont().deriveFont((statusLabel.getFont().getStyle() | java.awt.Font.ITALIC)));
         org.openide.awt.Mnemonics.setLocalizedText(statusLabel, org.openide.util.NbBundle.getMessage(DownloadPanel.class, "DownloadPanel.statusLabel.text")); // NOI18N
@@ -280,80 +236,36 @@ public class DownloadPanel extends javax.swing.JPanel {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(jLabel2)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(downloadPathText)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(chooseButton))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addComponent(statusLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(downloadButton))
+                        .addGap(119, 119, 119))
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(bottomPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel1)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jdkDescription, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .addComponent(bottomPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 289, Short.MAX_VALUE)
                         .addContainerGap())))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel1)
-                    .addComponent(jdkDescription))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel2)
-                    .addComponent(downloadPathText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(chooseButton))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(downloadButton)
-                    .addComponent(statusLabel))
+                .addComponent(statusLabel)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(bottomPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    @UIEffect
-    private void chooseButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chooseButtonActionPerformed
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(new File("."));
-        fileChooser.setDialogTitle("Select destination folder");
-        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        fileChooser.setAcceptAllFileFilterUsed(false);
-
-        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            File folder = fileChooser.getSelectedFile();
-            if (folder != null) {
-                String destinationFolder = folder.getAbsolutePath();
-                downloadPathText.setText(destinationFolder);
-                downloadButton.setEnabled(true);
-            }
-        }
-    }//GEN-LAST:event_chooseButtonActionPerformed
-
-    private void downloadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_downloadButtonActionPerformed
-        downloadButton.setEnabled(false);
+    private void downloadButtonActionPerformed() {
         //start from 0, maybe we restarted.
         progressBar.setValue(0);
-        downloadBundle(new File(downloadPathText.getText()));
-    }//GEN-LAST:event_downloadButtonActionPerformed
+        downloadBundle(new File(downloadFolder));
+    }
+
+    public void setDownloadFolder(String folder) {
+        this.downloadFolder = folder;
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel bottomPanel;
-    private javax.swing.JToggleButton chooseButton;
-    private javax.swing.JButton downloadButton;
-    private javax.swing.JTextField downloadPathText;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JLabel jdkDescription;
     private javax.swing.JProgressBar progressBar;
     private javax.swing.JLabel statusLabel;
     // End of variables declaration//GEN-END:variables

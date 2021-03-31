@@ -4,11 +4,11 @@ import java.io.File;
 import org.checkerframework.checker.guieffect.qual.UIEffect;
 import org.openide.WizardDescriptor;
 
-public class DownloadPlatform extends AbstractWizardPanel<DownloadPanel> {
+public class DownloadWizardPanel extends AbstractWizardPanel<DownloadPanel> {
 
     private final WizardState state;
 
-    DownloadPlatform(WizardState state) {
+    DownloadWizardPanel(WizardState state) {
         this.state = state;
     }
 
@@ -37,4 +37,9 @@ public class DownloadPlatform extends AbstractWizardPanel<DownloadPanel> {
             wiz.putProperty(FoojayPlatformIt.PROP_DOWNLOAD, file.getAbsolutePath());
     }
 
+    @Override
+    public void readSettings(WizardDescriptor wiz) {
+        String folder = (String) wiz.getProperty(FoojayPlatformIt.PROP_DOWNLOAD_FOLDER);
+        getComponent().setDownloadFolder(folder);
+    }
 }
