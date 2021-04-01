@@ -4,7 +4,6 @@
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/nb-module-project/3">
             <code-name-base>io.foojay.disco</code-name-base>
-            <standalone/>
             <module-dependencies>
                 <dependency>
                     <code-name-base>com.google.gson</code-name-base>
@@ -167,32 +166,32 @@
             </module-dependencies>
             <public-packages/>
             <class-path-extension>
-                <runtime-relative-path>ext/commons-compress-1.20.jar</runtime-relative-path>
-                <binary-origin>release/modules/ext/commons-compress-1.20.jar</binary-origin>
+                <runtime-relative-path />
+                <binary-origin>external/commons-compress-1.20.jar</binary-origin>
             </class-path-extension>
             <class-path-extension>
-                <runtime-relative-path>ext/httpcore5-5.0.2.jar</runtime-relative-path>
-                <binary-origin>release/modules/ext/httpcore5-5.0.2.jar</binary-origin>
+                <runtime-relative-path />
+                <binary-origin>external/httpcore5-5.0.2.jar</binary-origin>
             </class-path-extension>
             <class-path-extension>
-                <runtime-relative-path>ext/httpcore5-h2-5.0.2.jar</runtime-relative-path>
-                <binary-origin>release/modules/ext/httpcore5-h2-5.0.2.jar</binary-origin>
+                <runtime-relative-path />
+                <binary-origin>external/httpcore5-h2-5.0.2.jar</binary-origin>
             </class-path-extension>
             <class-path-extension>
-                <runtime-relative-path>ext/discoclient-1.0.jar</runtime-relative-path>
-                <binary-origin>release/modules/ext/discoclient-1.0.jar</binary-origin>
+                <runtime-relative-path />
+                <binary-origin>external/discoclient-1.0.jar</binary-origin>
             </class-path-extension>
             <class-path-extension>
-                <runtime-relative-path>ext/commons-codec-1.13.jar</runtime-relative-path>
-                <binary-origin>release/modules/ext/commons-codec-1.13.jar</binary-origin>
+                <runtime-relative-path />
+                <binary-origin>external/commons-codec-1.13.jar</binary-origin>
             </class-path-extension>
             <class-path-extension>
-                <runtime-relative-path>ext/httpclient5-5.0.3.jar</runtime-relative-path>
-                <binary-origin>release/modules/ext/httpclient5-5.0.3.jar</binary-origin>
+                <runtime-relative-path />
+                <binary-origin>external/httpclient5-5.0.3.jar</binary-origin>
             </class-path-extension>
             <class-path-extension>
-                <runtime-relative-path>ext/checker-qual-3.9.1.jar</runtime-relative-path>
-                <binary-origin>release/modules/ext/checker-qual-3.9.1.jar</binary-origin>
+                <runtime-relative-path />
+                <binary-origin>external/checker-qual-3.9.1.jar</binary-origin>
             </class-path-extension>
         </data>
     </configuration>
