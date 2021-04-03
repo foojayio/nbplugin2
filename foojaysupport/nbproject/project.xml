@@ -23,7 +23,7 @@
     <type>org.netbeans.modules.apisupport.project</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/nb-module-project/3">
-            <code-name-base>io.foojay.disco</code-name-base>
+            <code-name-base>org.netbeans.modules.java.disco</code-name-base>
             <module-dependencies>
                 <dependency>
                     <code-name-base>com.google.gson</code-name-base>
